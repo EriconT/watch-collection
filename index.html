@@ -120,7 +120,7 @@
         });
 
         function fetchData() {
-            // Using AllOrigins Proxy for better GitHub Pages compatibility
+            // Using AllOrigins Proxy for GitHub Pages compatibility
             const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_URL);
 
             Papa.parse(proxyUrl, {
@@ -173,21 +173,24 @@
             });
 
             // 3. Find Top Brand
-            const topBrand = Object.keys(brands).reduce((a, b) => brands[a] > brands[b] ? a : b);
+            const topBrand = Object.keys(brands).length ? Object.keys(brands).reduce((a, b) => brands[a] > brands[b] ? a : b) : '-';
             document.getElementById('stat-brand').textContent = topBrand;
 
             // 4. Find Top Movement
-            const topMov = Object.keys(movements).reduce((a, b) => movements[a] > movements[b] ? a : b);
+            const topMov = Object.keys(movements).length ? Object.keys(movements).reduce((a, b) => movements[a] > movements[b] ? a : b) : '-';
             document.getElementById('stat-movement').textContent = topMov;
 
             // 5. Latest Year
-            if(watches[0].PurchaseDate) {
+            if(watches[0] && watches[0].PurchaseDate) {
                 document.getElementById('stat-latest').textContent = watches[0].PurchaseDate.split('-')[0];
             }
 
             // 6. Generate Distribution Bar
             const barContainer = document.getElementById('brand-bar');
             const legendContainer = document.getElementById('brand-legend');
+            barContainer.innerHTML = ''; // Clear previous
+            legendContainer.innerHTML = ''; // Clear previous
+
             const colors = ['bg-slate-800', 'bg-blue-600', 'bg-slate-500', 'bg-blue-400', 'bg-slate-300'];
             
             let colorIndex = 0;
@@ -206,68 +209,4 @@
 
                     // Add to legend
                     const legendItem = document.createElement('div');
-                    legendItem.className = 'flex items-center gap-1';
-                    legendItem.innerHTML = `<div class="w-2 h-2 rounded-full ${color}"></div><span>${brand} (${count})</span>`;
-                    legendContainer.appendChild(legendItem);
-
-                    colorIndex++;
-                });
-        }
-
-        function renderCollection(watches) {
-            if (watches.length === 0) {
-                gallery.innerHTML = '';
-                document.getElementById('no-results').classList.remove('hidden');
-                return;
-            }
-            document.getElementById('no-results').classList.add('hidden');
-
-            gallery.innerHTML = watches.map(watch => {
-                const imageSrc = watch.ImageURL && watch.ImageURL.trim() !== '' 
-                    ? watch.ImageURL 
-                    : 'https://placehold.co/600x400/e2e8f0/475569?text=No+Image';
-
-                return `
-                <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 flex flex-col group">
-                    <div class="h-64 overflow-hidden bg-slate-100 relative">
-                        <img src="${imageSrc}" alt="${watch.Model}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                    </div>
-                    <div class="p-5 flex-1 flex flex-col">
-                        <div class="mb-4">
-                            <h3 class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">${watch.Brand}</h3>
-                            <h2 class="text-xl font-bold text-slate-900 leading-tight">${watch.Model}</h2>
-                            <p class="text-xs text-slate-400 mt-1 font-mono">${watch.Reference}</p>
-                        </div>
-                        <div class="mt-auto pt-4 border-t border-slate-50 grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                                <span class="text-slate-400 block mb-0.5">Size</span>
-                                <span class="font-medium text-slate-700">${watch.CaseSize}</span>
-                            </div>
-                            <div>
-                                <span class="text-slate-400 block mb-0.5">Date</span>
-                                <span class="font-medium text-slate-700">${watch.PurchaseDate}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        function filterAndRender(term) {
-            const filtered = allWatches.filter(watch => {
-                return Object.values(watch).some(val => 
-                    String(val).toLowerCase().includes(term)
-                );
-            });
-            renderCollection(filtered);
-        }
-
-        function showError() {
-            loadingIndicator.classList.add('hidden');
-            document.getElementById('error-message').classList.remove('hidden');
-            statusBadge.textContent = "Error";
-            statusBadge.classList.add('bg-red-50', 'text-red-600');
-        }
-    </script>
-</body>
-</html>
+                    legendItem.

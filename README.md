@@ -2,7 +2,6 @@
 
 A minimalist, serverless Progressive Web App (PWA) designed to track and visualize a personal watch collection. The app uses Google Sheets as a backend database, allowing for easy updates without touching a line of code.
 
-(You can replace this link with a screenshot of your actual app later)
 ✨ Features
 
     Google Sheets Backend: Add, remove, or edit watches using a standard spreadsheet.

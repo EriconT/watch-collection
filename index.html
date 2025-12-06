@@ -11,7 +11,6 @@
     <title>Enrico's Watch Collection</title>
     
     <link rel="icon" href="https://fav.farm/⌚">
-    
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/4305/4305432.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -46,17 +45,22 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">Enrico's Watch Collection</span>
+                <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white hidden sm:block">Enrico's Collection</span>
+                <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white sm:hidden">Collection</span>
             </div>
             
-            <div class="flex items-center gap-2">
-                <div id="status-badge" class="hidden sm:block px-3 py-1 bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium animate-pulse mr-2">
+            <div class="flex items-center gap-1 sm:gap-2">
+                <div id="status-badge" class="hidden md:block px-3 py-1 bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium animate-pulse mr-2">
                     Syncing...
                 </div>
                 
                 <button id="sync-btn" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Force Sync from Google">
                     <svg id="sync-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
+
+                <a id="edit-btn" href="#" target="_blank" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Open Google Sheet">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </a>
 
                 <button id="theme-toggle" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <svg id="sun-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -130,13 +134,20 @@
 
     <script>
         // ==========================================
-        // CONFIGURATION: PASTE YOUR LINK BELOW
+        // CONFIGURATION: PASTE YOUR LINKS BELOW
         // ==========================================
+        
+        // 1. The Published CSV Link (From File > Share > Publish to web)
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQY4iwH93pGLbTnMgV4uN4sv4zZTjvQ1PyBHBVBl4LFDSqFS8j7-96iMOX2q9d6el2w9iDyGa-6g-L/pub?output=csv"; 
+        
+        // 2. The Edit Link (The URL when you are editing the sheet in your browser)
+        const EDIT_URL = "https://docs.google.com/spreadsheets/d/1c2o-pGvXUZFE-P9639cYjC36nHZHCypAQ6BCd9AA_Ag/edit?gid=0#gid=0";
+
+
+        // --- APP LOGIC BELOW ---
         
         let allWatches = [];
 
-        // Elements
         const gallery = document.getElementById('gallery');
         const dashboard = document.getElementById('dashboard');
         const loadingIndicator = document.getElementById('loading-indicator');
@@ -147,6 +158,8 @@
         const themeToggleBtn = document.getElementById('theme-toggle');
         const syncBtn = document.getElementById('sync-btn');
         const syncIcon = document.getElementById('sync-icon');
+        const editBtn = document.getElementById('edit-btn');
+        
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
         const htmlElement = document.documentElement;
@@ -184,10 +197,18 @@
         // --- APP LOGIC ---
 
         window.addEventListener('DOMContentLoaded', () => {
-            if (!SHEET_URL || SHEET_URL.includes("PASTE_YOUR_LINK")) {
+            if (!SHEET_URL || SHEET_URL.includes("PASTE_YOUR_CSV_LINK")) {
                 showError("Please open index.html and paste your Google Sheet Link into the code.");
                 return;
             }
+            
+            // Set up Edit Button
+            if (EDIT_URL && !EDIT_URL.includes("PASTE")) {
+                editBtn.href = EDIT_URL;
+            } else {
+                editBtn.classList.add('hidden');
+            }
+
             fetchData();
         });
 

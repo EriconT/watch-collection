@@ -8,13 +8,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class', // Enables manual toggling
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         slate: {
-                            850: '#1e293b', // Custom dark shade for cards
-                            900: '#0f172a', // Deep background
+                            850: '#1e293b', 
+                            900: '#0f172a',
                         }
                     }
                 }
@@ -40,11 +40,15 @@
                 <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">Horology Cloud</span>
             </div>
             
-            <div class="flex items-center gap-4">
-                <div id="status-badge" class="hidden sm:block px-3 py-1 bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium animate-pulse">
+            <div class="flex items-center gap-2">
+                <div id="status-badge" class="hidden sm:block px-3 py-1 bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium animate-pulse mr-2">
                     Syncing...
                 </div>
                 
+                <button id="sync-btn" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Force Sync from Google">
+                    <svg id="sync-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+
                 <button id="theme-toggle" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <svg id="sun-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     <svg id="moon-icon" class="w-5 h-5 block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
@@ -131,15 +135,16 @@
         const statusBadge = document.getElementById('status-badge');
         const errorDetails = document.getElementById('error-details');
         
-        // Theme Toggle Elements
+        // Buttons
         const themeToggleBtn = document.getElementById('theme-toggle');
+        const syncBtn = document.getElementById('sync-btn');
+        const syncIcon = document.getElementById('sync-icon');
+        
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
         const htmlElement = document.documentElement;
 
         // --- DARK MODE LOGIC ---
-        
-        // 1. Check preference on load
         if (localStorage.getItem('theme') === 'dark' || 
            (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             enableDarkMode();
@@ -147,7 +152,6 @@
             enableLightMode();
         }
 
-        // 2. Toggle Handler
         themeToggleBtn.addEventListener('click', () => {
             if (htmlElement.classList.contains('dark')) {
                 enableLightMode();
@@ -180,18 +184,39 @@
             fetchData();
         });
 
+        // Sync Button Logic
+        syncBtn.addEventListener('click', () => {
+            // Add spin animation
+            syncIcon.classList.add('animate-spin');
+            statusBadge.textContent = "Updating...";
+            statusBadge.classList.remove('bg-green-50', 'text-green-600', 'dark:bg-green-900/30', 'dark:text-green-400');
+            statusBadge.classList.add('bg-blue-50', 'text-blue-600', 'dark:bg-slate-800', 'dark:text-blue-400', 'animate-pulse');
+            
+            // Force fetch
+            fetchData();
+        });
+
         searchInput.addEventListener('input', (e) => {
             filterAndRender(e.target.value.toLowerCase());
         });
 
         function fetchData() {
-            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(SHEET_URL);
+            // CACHE BUSTING:
+            // We append a random timestamp (&t=...) to the URL.
+            // This forces the browser and proxy to treat it as a brand new request.
+            const cacheBuster = SHEET_URL + (SHEET_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+            
+            // Using corsproxy.io
+            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(cacheBuster);
 
             Papa.parse(proxyUrl, {
                 download: true,
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
+                    // Stop spin animation
+                    syncIcon.classList.remove('animate-spin');
+
                     if (results.data && results.data.length > 0) {
                         allWatches = results.data.sort((a, b) => 
                             new Date(b.PurchaseDate) - new Date(a.PurchaseDate)
@@ -202,6 +227,7 @@
                     }
                 },
                 error: function(err) { 
+                    syncIcon.classList.remove('animate-spin');
                     console.error("PapaParse Error:", err); 
                     showError("Network Error. The proxy might be blocking the request."); 
                 }
@@ -265,13 +291,11 @@
                     const percentage = (count / watches.length) * 100;
                     const colorClass = colors[colorIndex % colors.length];
                     
-                    // Add segment to bar
                     const segment = document.createElement('div');
                     segment.className = `${colorClass} h-full`;
                     segment.style.width = `${percentage}%`;
                     barContainer.appendChild(segment);
 
-                    // Add to legend
                     const legendItem = document.createElement('div');
                     legendItem.className = 'flex items-center gap-1';
                     legendItem.innerHTML = `<div class="w-2 h-2 rounded-full ${colorClass.split(' ')[0]}"></div><span>${brand} (${count})</span>`;

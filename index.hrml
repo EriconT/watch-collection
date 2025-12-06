@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cloud Watch Collection</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="font-bold text-xl tracking-tight text-slate-900">Horology Cloud</span>
+            </div>
+            <div class="text-sm text-slate-500 font-medium" id="stats-display">Connecting...</div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="max-w-md mx-auto mb-10 sticky top-20 z-40">
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input 
+                    type="text" 
+                    id="search-input"
+                    class="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-full leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all" 
+                    placeholder="Search brand, model, or reference..."
+                    disabled
+                >
+            </div>
+        </div>
+
+        <div id="loading-indicator" class="flex flex-col items-center justify-center py-10">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+            <p class="text-slate-500">Fetching your collection...</p>
+        </div>
+
+        <div id="error-message" class="hidden text-center py-20">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 class="text-lg font-medium text-slate-900">Connection Failed</h3>
+            <p class="mt-2 text-slate-500 max-w-md mx-auto">Could not load data. Check your Google Sheet link.</p>
+        </div>
+
+        <div id="no-results" class="hidden text-center py-12">
+            <p class="text-slate-400 text-lg">No watches match your search.</p>
+        </div>
+
+        <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden fade-in">
+            </div>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION: PASTE YOUR LINK BELOW
+        // ==========================================
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQY4iwH93pGLbTnMgV4uN4sv4zZTjvQ1PyBHBVBl4LFDSqFS8j7-96iMOX2q9d6el2w9iDyGa-6g-L/pub?output=csv"; 
+        
+        
+        // App State
+        let allWatches = []; // Stores the full list in memory
+
+        // DOM Elements
+        const gallery = document.getElementById('gallery');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const errorMessage = document.getElementById('error-message');
+        const statsDisplay = document.getElementById('stats-display');
+        const searchInput = document.getElementById('search-input');
+        const noResults = document.getElementById('no-results');
+
+        // Initial Load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (SHEET_URL.includes("PASTE_YOUR_LINK")) {
+                alert("Please update the SHEET_URL in index.html");
+                return;
+            }
+            fetchData();
+        });
+
+        // Event Listener for Search
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filterAndRender(searchTerm);
+        });
+
+        function fetchData() {
+            // Using the Proxy that worked for you
+            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(SHEET_URL);
+
+            Papa.parse(proxyUrl, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        allWatches = results.data; // Save data to memory
+                        initializeSuccess();
+                    } else {
+                        showError();
+                    }
+                },
+                error: function(error) {
+                    console.error("Error:", error);
+                    showError();
+                }
+            });
+        }
+
+        function initializeSuccess() {
+            loadingIndicator.classList.add('hidden');
+            gallery.classList.remove('hidden');
+            searchInput.disabled = false; // Enable search bar
+            renderCollection(allWatches);
+        }
+
+        function filterAndRender(term) {
+            const filtered = allWatches.filter(watch => {
+                // Search across multiple fields
+                return (watch.Brand && watch.Brand.toLowerCase().includes(term)) ||
+                       (watch.Model && watch.Model.toLowerCase().includes(term)) ||
+                       (watch.Reference && watch.Reference.toLowerCase().includes(term)) ||
+                       (watch.Movement && watch.Movement.toLowerCase().includes(term));
+            });
+            
+            renderCollection(filtered);
+        }
+
+        function renderCollection(watches) {
+            // Update stats
+            statsDisplay.textContent = `${watches.length} Timepieces`;
+
+            // Handle empty search results
+            if (watches.length === 0) {
+                gallery.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+            }
+
+            // Render HTML
+            gallery.innerHTML = watches.map(watch => {
+                const imageSrc = watch.ImageURL && watch.ImageURL.trim() !== '' 
+                    ? watch.ImageURL 
+                    : 'https://placehold.co/600x400/e2e8f0/475569?text=No+Image';
+
+                return `
+                <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 flex flex-col group">
+                    <div class="h-64 overflow-hidden bg-slate-100 relative">
+                        <img src="${imageSrc}" alt="${watch.Model}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-md">${watch.CaseSize || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col">
+                        <div class="mb-4">
+                            <h3 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">${watch.Brand || 'Unknown'}</h3>
+                            <h2 class="text-2xl font-bold text-slate-900 leading-tight">${watch.Model || 'Unknown Model'}</h2>
+                            <p class="text-sm text-slate-500 mt-1 font-mono text-xs">REF: ${watch.Reference || '---'}</p>
+                        </div>
+                        
+                        <div class="mt-auto pt-4 border-t border-slate-100 flex justify-between items-end">
+                            <div>
+                                <span class="text-slate-400 block text-[10px] uppercase tracking-wide">Movement</span>
+                                <span class="font-medium text-slate-700 text-sm">${watch.Movement || '-'}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-slate-400 block text-[10px] uppercase tracking-wide">Year</span>
+                                <span class="font-medium text-slate-700 text-sm">${watch.PurchaseDate || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function showError() {
+            loadingIndicator.classList.add('hidden');
+            errorMessage.classList.remove('hidden');
+            statsDisplay.textContent = "Error";
+        }
+    </script>
+</body>
+</html>

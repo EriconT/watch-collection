@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Cloud Watch Collection</title>
-    
+    <title>Horology Cloud</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
@@ -17,95 +14,113 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-20">
 
-    <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 bg-white/80 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span class="font-bold text-xl tracking-tight text-slate-900">Horology Cloud</span>
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="font-bold text-lg tracking-tight text-slate-900">Horology Cloud</span>
             </div>
-            <div class="text-sm text-slate-500 font-medium" id="stats-display">Connecting...</div>
+            <div id="status-badge" class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium animate-pulse">
+                Syncing...
+            </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <div class="max-w-md mx-auto mb-10 sticky top-20 z-40">
-            <div class="relative group">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+        <div id="dashboard" class="hidden mb-12 fade-in">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Collection Analytics</h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500 mb-1">Total Pieces</p>
+                    <p class="text-3xl font-bold text-slate-900" id="stat-total">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500 mb-1">Top Brand</p>
+                    <p class="text-xl font-bold text-blue-600 truncate" id="stat-brand">-</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500 mb-1">Fav Movement</p>
+                    <p class="text-xl font-bold text-slate-700 truncate" id="stat-movement">-</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500 mb-1">Latest Acquisition</p>
+                    <p class="text-xl font-bold text-slate-700 truncate" id="stat-latest">-</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-1 rounded-full shadow-sm flex h-4 overflow-hidden" id="brand-bar">
+                </div>
+            <div class="flex flex-wrap gap-4 mt-3 text-xs text-slate-500" id="brand-legend">
+                </div>
+        </div>
+
+        <div class="max-w-md mx-auto mb-10 sticky top-24 z-40">
+            <div class="relative group shadow-lg rounded-full">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
                 <input 
                     type="text" 
                     id="search-input"
-                    class="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-full leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all" 
-                    placeholder="Search brand, model, or reference..."
+                    class="block w-full pl-11 pr-4 py-3 border-none rounded-full bg-white text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 transition-all outline-none" 
+                    placeholder="Filter by brand, model, or reference..."
                     disabled
                 >
             </div>
         </div>
 
-        <div id="loading-indicator" class="flex flex-col items-center justify-center py-10">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-            <p class="text-slate-500">Fetching your collection...</p>
+        <div id="loading-indicator" class="flex justify-center py-20">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400"></div>
         </div>
 
-        <div id="error-message" class="hidden text-center py-20">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
-                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            </div>
-            <h3 class="text-lg font-medium text-slate-900">Connection Failed</h3>
-            <p class="mt-2 text-slate-500 max-w-md mx-auto">Could not load data. Check your Google Sheet link.</p>
-        </div>
-
-        <div id="no-results" class="hidden text-center py-12">
-            <p class="text-slate-400 text-lg">No watches match your search.</p>
+        <div id="error-message" class="hidden text-center py-10">
+            <p class="text-red-500">Could not connect to Google Sheets.</p>
         </div>
 
         <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden fade-in">
             </div>
 
+        <div id="no-results" class="hidden text-center py-10 text-slate-400">
+            No matching watches found.
+        </div>
+
     </main>
 
     <script>
         // ==========================================
-        // CONFIGURATION: PASTE YOUR LINK BELOW
+        // CONFIGURATION
         // ==========================================
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQY4iwH93pGLbTnMgV4uN4sv4zZTjvQ1PyBHBVBl4LFDSqFS8j7-96iMOX2q9d6el2w9iDyGa-6g-L/pub?output=csv"; 
         
-        
-        // App State
-        let allWatches = []; // Stores the full list in memory
+        let allWatches = [];
 
-        // DOM Elements
+        // Elements
         const gallery = document.getElementById('gallery');
+        const dashboard = document.getElementById('dashboard');
         const loadingIndicator = document.getElementById('loading-indicator');
-        const errorMessage = document.getElementById('error-message');
-        const statsDisplay = document.getElementById('stats-display');
         const searchInput = document.getElementById('search-input');
-        const noResults = document.getElementById('no-results');
+        const statusBadge = document.getElementById('status-badge');
 
-        // Initial Load
         window.addEventListener('DOMContentLoaded', () => {
-            if (SHEET_URL.includes("PASTE_YOUR_LINK")) {
-                alert("Please update the SHEET_URL in index.html");
+            if (!SHEET_URL || SHEET_URL.includes("PASTE_YOUR_LINK")) {
+                alert("Please update the SHEET_URL in the code.");
                 return;
             }
             fetchData();
         });
 
-        // Event Listener for Search
         searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            filterAndRender(searchTerm);
+            filterAndRender(e.target.value.toLowerCase());
         });
 
-function fetchData() {
-            // SWITCHING TO ALLORIGINS PROXY
-            // This proxy is often more stable for GitHub Pages
+        function fetchData() {
+            // Using AllOrigins Proxy for better GitHub Pages compatibility
             const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_URL);
 
             Papa.parse(proxyUrl, {
@@ -114,53 +129,99 @@ function fetchData() {
                 skipEmptyLines: true,
                 complete: function(results) {
                     if (results.data && results.data.length > 0) {
-                        allWatches = results.data; 
+                        // Sort by Purchase Date (Newest first)
+                        allWatches = results.data.sort((a, b) => 
+                            new Date(b.PurchaseDate) - new Date(a.PurchaseDate)
+                        );
                         initializeSuccess();
                     } else {
-                        console.error("Data returned empty.");
                         showError();
                     }
                 },
-                error: function(error) {
-                    console.error("PapaParse Error:", error);
-                    showError();
-                }
+                error: function(err) { console.error(err); showError(); }
             });
         }
 
         function initializeSuccess() {
             loadingIndicator.classList.add('hidden');
             gallery.classList.remove('hidden');
-            searchInput.disabled = false; // Enable search bar
+            dashboard.classList.remove('hidden');
+            searchInput.disabled = false;
+            
+            // Update Status Badge
+            statusBadge.textContent = "Live";
+            statusBadge.classList.remove('animate-pulse', 'bg-blue-50', 'text-blue-600');
+            statusBadge.classList.add('bg-green-50', 'text-green-600');
+
+            renderStats(allWatches);
             renderCollection(allWatches);
         }
 
-        function filterAndRender(term) {
-            const filtered = allWatches.filter(watch => {
-                // Search across multiple fields
-                return (watch.Brand && watch.Brand.toLowerCase().includes(term)) ||
-                       (watch.Model && watch.Model.toLowerCase().includes(term)) ||
-                       (watch.Reference && watch.Reference.toLowerCase().includes(term)) ||
-                       (watch.Movement && watch.Movement.toLowerCase().includes(term));
-            });
+        function renderStats(watches) {
+            // 1. Total Count
+            document.getElementById('stat-total').textContent = watches.length;
+
+            // 2. Counts logic
+            const brands = {};
+            const movements = {};
             
-            renderCollection(filtered);
+            watches.forEach(w => {
+                const b = (w.Brand || 'Unknown').trim();
+                const m = (w.Movement || 'Unknown').trim();
+                brands[b] = (brands[b] || 0) + 1;
+                movements[m] = (movements[m] || 0) + 1;
+            });
+
+            // 3. Find Top Brand
+            const topBrand = Object.keys(brands).reduce((a, b) => brands[a] > brands[b] ? a : b);
+            document.getElementById('stat-brand').textContent = topBrand;
+
+            // 4. Find Top Movement
+            const topMov = Object.keys(movements).reduce((a, b) => movements[a] > movements[b] ? a : b);
+            document.getElementById('stat-movement').textContent = topMov;
+
+            // 5. Latest Year
+            if(watches[0].PurchaseDate) {
+                document.getElementById('stat-latest').textContent = watches[0].PurchaseDate.split('-')[0];
+            }
+
+            // 6. Generate Distribution Bar
+            const barContainer = document.getElementById('brand-bar');
+            const legendContainer = document.getElementById('brand-legend');
+            const colors = ['bg-slate-800', 'bg-blue-600', 'bg-slate-500', 'bg-blue-400', 'bg-slate-300'];
+            
+            let colorIndex = 0;
+            // Sort brands by count descending
+            Object.entries(brands)
+                .sort(([,a], [,b]) => b - a)
+                .forEach(([brand, count]) => {
+                    const percentage = (count / watches.length) * 100;
+                    const color = colors[colorIndex % colors.length];
+                    
+                    // Add segment to bar
+                    const segment = document.createElement('div');
+                    segment.className = `${color} h-full`;
+                    segment.style.width = `${percentage}%`;
+                    barContainer.appendChild(segment);
+
+                    // Add to legend
+                    const legendItem = document.createElement('div');
+                    legendItem.className = 'flex items-center gap-1';
+                    legendItem.innerHTML = `<div class="w-2 h-2 rounded-full ${color}"></div><span>${brand} (${count})</span>`;
+                    legendContainer.appendChild(legendItem);
+
+                    colorIndex++;
+                });
         }
 
         function renderCollection(watches) {
-            // Update stats
-            statsDisplay.textContent = `${watches.length} Timepieces`;
-
-            // Handle empty search results
             if (watches.length === 0) {
                 gallery.innerHTML = '';
-                noResults.classList.remove('hidden');
+                document.getElementById('no-results').classList.remove('hidden');
                 return;
-            } else {
-                noResults.classList.add('hidden');
             }
+            document.getElementById('no-results').classList.add('hidden');
 
-            // Render HTML
             gallery.innerHTML = watches.map(watch => {
                 const imageSrc = watch.ImageURL && watch.ImageURL.trim() !== '' 
                     ? watch.ImageURL 
@@ -170,37 +231,42 @@ function fetchData() {
                 <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 flex flex-col group">
                     <div class="h-64 overflow-hidden bg-slate-100 relative">
                         <img src="${imageSrc}" alt="${watch.Model}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span class="bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-md">${watch.CaseSize || 'N/A'}</span>
-                        </div>
                     </div>
-                    <div class="p-6 flex-1 flex flex-col">
+                    <div class="p-5 flex-1 flex flex-col">
                         <div class="mb-4">
-                            <h3 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">${watch.Brand || 'Unknown'}</h3>
-                            <h2 class="text-2xl font-bold text-slate-900 leading-tight">${watch.Model || 'Unknown Model'}</h2>
-                            <p class="text-sm text-slate-500 mt-1 font-mono text-xs">REF: ${watch.Reference || '---'}</p>
+                            <h3 class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">${watch.Brand}</h3>
+                            <h2 class="text-xl font-bold text-slate-900 leading-tight">${watch.Model}</h2>
+                            <p class="text-xs text-slate-400 mt-1 font-mono">${watch.Reference}</p>
                         </div>
-                        
-                        <div class="mt-auto pt-4 border-t border-slate-100 flex justify-between items-end">
+                        <div class="mt-auto pt-4 border-t border-slate-50 grid grid-cols-2 gap-2 text-xs">
                             <div>
-                                <span class="text-slate-400 block text-[10px] uppercase tracking-wide">Movement</span>
-                                <span class="font-medium text-slate-700 text-sm">${watch.Movement || '-'}</span>
+                                <span class="text-slate-400 block mb-0.5">Size</span>
+                                <span class="font-medium text-slate-700">${watch.CaseSize}</span>
                             </div>
-                            <div class="text-right">
-                                <span class="text-slate-400 block text-[10px] uppercase tracking-wide">Year</span>
-                                <span class="font-medium text-slate-700 text-sm">${watch.PurchaseDate || '-'}</span>
+                            <div>
+                                <span class="text-slate-400 block mb-0.5">Date</span>
+                                <span class="font-medium text-slate-700">${watch.PurchaseDate}</span>
                             </div>
                         </div>
                     </div>
-                </div>
-                `;
+                </div>`;
             }).join('');
+        }
+
+        function filterAndRender(term) {
+            const filtered = allWatches.filter(watch => {
+                return Object.values(watch).some(val => 
+                    String(val).toLowerCase().includes(term)
+                );
+            });
+            renderCollection(filtered);
         }
 
         function showError() {
             loadingIndicator.classList.add('hidden');
-            errorMessage.classList.remove('hidden');
-            statsDisplay.textContent = "Error";
+            document.getElementById('error-message').classList.remove('hidden');
+            statusBadge.textContent = "Error";
+            statusBadge.classList.add('bg-red-50', 'text-red-600');
         }
     </script>
 </body>

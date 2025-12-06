@@ -202,11 +202,8 @@
 
         function fetchData() {
             // CACHE BUSTING:
-            // We append a random timestamp (&t=...) to the URL.
-            // This forces the browser and proxy to treat it as a brand new request.
             const cacheBuster = SHEET_URL + (SHEET_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
             
-            // Using corsproxy.io
             const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(cacheBuster);
 
             Papa.parse(proxyUrl, {
@@ -214,7 +211,6 @@
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    // Stop spin animation
                     syncIcon.classList.remove('animate-spin');
 
                     if (results.data && results.data.length > 0) {
@@ -246,6 +242,16 @@
 
             renderStats(allWatches);
             renderCollection(allWatches);
+        }
+
+        // --- FILTER FUNCTION (FIXED) ---
+        function filterAndRender(term) {
+            const filtered = allWatches.filter(watch => {
+                return Object.values(watch).some(val => 
+                    String(val).toLowerCase().includes(term)
+                );
+            });
+            renderCollection(filtered);
         }
 
         function renderStats(watches) {

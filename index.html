@@ -52,10 +52,8 @@
                 </div>
             </div>
 
-            <div class="bg-white p-1 rounded-full shadow-sm flex h-4 overflow-hidden" id="brand-bar">
-                </div>
-            <div class="flex flex-wrap gap-4 mt-3 text-xs text-slate-500" id="brand-legend">
-                </div>
+            <div class="bg-white p-1 rounded-full shadow-sm flex h-4 overflow-hidden" id="brand-bar"></div>
+            <div class="flex flex-wrap gap-4 mt-3 text-xs text-slate-500" id="brand-legend"></div>
         </div>
 
         <div class="max-w-md mx-auto mb-10 sticky top-24 z-40">
@@ -79,12 +77,12 @@
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400"></div>
         </div>
 
-        <div id="error-message" class="hidden text-center py-10">
-            <p class="text-red-500">Could not connect to Google Sheets.</p>
+        <div id="error-message" class="hidden text-center py-10 px-4">
+            <p class="text-red-500 font-bold mb-2">Connection Failed</p>
+            <p class="text-sm text-slate-500" id="error-details">Could not connect to Google Sheets.</p>
         </div>
 
-        <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden fade-in">
-            </div>
+        <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden fade-in"></div>
 
         <div id="no-results" class="hidden text-center py-10 text-slate-400">
             No matching watches found.
@@ -94,7 +92,7 @@
 
     <script>
         // ==========================================
-        // CONFIGURATION
+        // CONFIGURATION: PASTE YOUR LINK BELOW
         // ==========================================
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQY4iwH93pGLbTnMgV4uN4sv4zZTjvQ1PyBHBVBl4LFDSqFS8j7-96iMOX2q9d6el2w9iDyGa-6g-L/pub?output=csv"; 
         
@@ -106,10 +104,11 @@
         const loadingIndicator = document.getElementById('loading-indicator');
         const searchInput = document.getElementById('search-input');
         const statusBadge = document.getElementById('status-badge');
+        const errorDetails = document.getElementById('error-details');
 
         window.addEventListener('DOMContentLoaded', () => {
             if (!SHEET_URL || SHEET_URL.includes("PASTE_YOUR_LINK")) {
-                alert("Please update the SHEET_URL in the code.");
+                showError("Please open index.html and paste your Google Sheet Link into the code.");
                 return;
             }
             fetchData();
@@ -120,25 +119,32 @@
         });
 
         function fetchData() {
-            // Using AllOrigins Proxy for GitHub Pages compatibility
-            const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_URL);
+            // REVERTED TO THE PROXY THAT WORKED FOR YOU (corsproxy.io)
+            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(SHEET_URL);
+
+            console.log("Attempting to fetch:", proxyUrl);
 
             Papa.parse(proxyUrl, {
                 download: true,
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
+                    console.log("Download complete. Rows found:", results.data ? results.data.length : 0);
+                    
                     if (results.data && results.data.length > 0) {
-                        // Sort by Purchase Date (Newest first)
+                        // Sort by Purchase Date
                         allWatches = results.data.sort((a, b) => 
                             new Date(b.PurchaseDate) - new Date(a.PurchaseDate)
                         );
                         initializeSuccess();
                     } else {
-                        showError();
+                        showError("Connected to Sheet, but found no data. Check your Sheet formatting.");
                     }
                 },
-                error: function(err) { console.error(err); showError(); }
+                error: function(err) { 
+                    console.error("PapaParse Error:", err); 
+                    showError("Network Error. The proxy might be blocking the request."); 
+                }
             });
         }
 
@@ -148,7 +154,6 @@
             dashboard.classList.remove('hidden');
             searchInput.disabled = false;
             
-            // Update Status Badge
             statusBadge.textContent = "Live";
             statusBadge.classList.remove('animate-pulse', 'bg-blue-50', 'text-blue-600');
             statusBadge.classList.add('bg-green-50', 'text-green-600');
@@ -158,10 +163,8 @@
         }
 
         function renderStats(watches) {
-            // 1. Total Count
             document.getElementById('stat-total').textContent = watches.length;
 
-            // 2. Counts logic
             const brands = {};
             const movements = {};
             
@@ -172,41 +175,100 @@
                 movements[m] = (movements[m] || 0) + 1;
             });
 
-            // 3. Find Top Brand
             const topBrand = Object.keys(brands).length ? Object.keys(brands).reduce((a, b) => brands[a] > brands[b] ? a : b) : '-';
             document.getElementById('stat-brand').textContent = topBrand;
 
-            // 4. Find Top Movement
             const topMov = Object.keys(movements).length ? Object.keys(movements).reduce((a, b) => movements[a] > movements[b] ? a : b) : '-';
             document.getElementById('stat-movement').textContent = topMov;
 
-            // 5. Latest Year
             if(watches[0] && watches[0].PurchaseDate) {
                 document.getElementById('stat-latest').textContent = watches[0].PurchaseDate.split('-')[0];
             }
 
-            // 6. Generate Distribution Bar
             const barContainer = document.getElementById('brand-bar');
             const legendContainer = document.getElementById('brand-legend');
-            barContainer.innerHTML = ''; // Clear previous
-            legendContainer.innerHTML = ''; // Clear previous
+            barContainer.innerHTML = ''; 
+            legendContainer.innerHTML = ''; 
 
             const colors = ['bg-slate-800', 'bg-blue-600', 'bg-slate-500', 'bg-blue-400', 'bg-slate-300'];
-            
             let colorIndex = 0;
-            // Sort brands by count descending
+            
             Object.entries(brands)
                 .sort(([,a], [,b]) => b - a)
                 .forEach(([brand, count]) => {
                     const percentage = (count / watches.length) * 100;
                     const color = colors[colorIndex % colors.length];
                     
-                    // Add segment to bar
                     const segment = document.createElement('div');
                     segment.className = `${color} h-full`;
                     segment.style.width = `${percentage}%`;
                     barContainer.appendChild(segment);
 
-                    // Add to legend
                     const legendItem = document.createElement('div');
-                    legendItem.
+                    legendItem.className = 'flex items-center gap-1';
+                    legendItem.innerHTML = `<div class="w-2 h-2 rounded-full ${color}"></div><span>${brand} (${count})</span>`;
+                    legendContainer.appendChild(legendItem);
+
+                    colorIndex++;
+                });
+        }
+
+        function renderCollection(watches) {
+            if (watches.length === 0) {
+                gallery.innerHTML = '';
+                document.getElementById('no-results').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('no-results').classList.add('hidden');
+
+            gallery.innerHTML = watches.map(watch => {
+                const imageSrc = watch.ImageURL && watch.ImageURL.trim() !== '' 
+                    ? watch.ImageURL 
+                    : 'https://placehold.co/600x400/e2e8f0/475569?text=No+Image';
+
+                return `
+                <div class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 flex flex-col group">
+                    <div class="h-64 overflow-hidden bg-slate-100 relative">
+                        <img src="${imageSrc}" alt="${watch.Model}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col">
+                        <div class="mb-4">
+                            <h3 class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">${watch.Brand}</h3>
+                            <h2 class="text-xl font-bold text-slate-900 leading-tight">${watch.Model}</h2>
+                            <p class="text-xs text-slate-400 mt-1 font-mono">${watch.Reference}</p>
+                        </div>
+                        <div class="mt-auto pt-4 border-t border-slate-50 grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                                <span class="text-slate-400 block mb-0.5">Size</span>
+                                <span class="font-medium text-slate-700">${watch.CaseSize}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block mb-0.5">Date</span>
+                                <span class="font-medium text-slate-700">${watch.PurchaseDate}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function filterAndRender(term) {
+            const filtered = allWatches.filter(watch => {
+                return Object.values(watch).some(val => 
+                    String(val).toLowerCase().includes(term)
+                );
+            });
+            renderCollection(filtered);
+        }
+
+        function showError(msg) {
+            loadingIndicator.classList.add('hidden');
+            document.getElementById('error-message').classList.remove('hidden');
+            if(msg) errorDetails.textContent = msg;
+            
+            statusBadge.textContent = "Error";
+            statusBadge.classList.add('bg-red-50', 'text-red-600');
+        }
+    </script>
+</body>
+</html>

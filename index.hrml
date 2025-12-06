@@ -103,9 +103,10 @@
             filterAndRender(searchTerm);
         });
 
-        function fetchData() {
-            // Using the Proxy that worked for you
-            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(SHEET_URL);
+function fetchData() {
+            // SWITCHING TO ALLORIGINS PROXY
+            // This proxy is often more stable for GitHub Pages
+            const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_URL);
 
             Papa.parse(proxyUrl, {
                 download: true,
@@ -113,14 +114,15 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     if (results.data && results.data.length > 0) {
-                        allWatches = results.data; // Save data to memory
+                        allWatches = results.data; 
                         initializeSuccess();
                     } else {
+                        console.error("Data returned empty.");
                         showError();
                     }
                 },
                 error: function(error) {
-                    console.error("Error:", error);
+                    console.error("PapaParse Error:", error);
                     showError();
                 }
             });

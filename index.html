@@ -11,7 +11,8 @@
     <title>Enrico's Watch Collection</title>
     
     <link rel="icon" href="https://fav.farm/⌚">
-    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">    
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -136,11 +137,8 @@
         // CONFIGURATION: PASTE YOUR LINKS BELOW
         // ==========================================
         
-        // 1. The Published CSV Link (From File > Share > Publish to web)
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQY4iwH93pGLbTnMgV4uN4sv4zZTjvQ1PyBHBVBl4LFDSqFS8j7-96iMOX2q9d6el2w9iDyGa-6g-L/pub?output=csv"; 
-        
-        // 2. The Edit Link (The URL when you are editing the sheet in your browser)
-        const EDIT_URL = "https://docs.google.com/spreadsheets/d/1c2o-pGvXUZFE-P9639cYjC36nHZHCypAQ6BCd9AA_Ag/edit?gid=0#gid=0";
+        const EDIT_URL = "PAhttps://docs.google.com/spreadsheets/d/1c2o-pGvXUZFE-P9639cYjC36nHZHCypAQ6BCd9AA_Ag/edit?gid=0#gid=0";
 
 
         // --- APP LOGIC BELOW ---
@@ -193,6 +191,23 @@
             moonIcon.classList.remove('hidden');
         }
 
+        // --- GOOGLE DRIVE HELPER FUNCTION ---
+        function processImage(url) {
+            if (!url || url.trim() === '') return null;
+            let cleanUrl = url.trim();
+
+            // Handle Google Drive Links
+            // Converts: https://drive.google.com/file/d/1ANyTM.../view
+            // To:       https://drive.google.com/uc?export=view&id=1ANyTM...
+            if (cleanUrl.includes('drive.google.com')) {
+                const idMatch = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (idMatch && idMatch[1]) {
+                    return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+                }
+            }
+            return cleanUrl;
+        }
+
         // --- APP LOGIC ---
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -201,7 +216,6 @@
                 return;
             }
             
-            // Set up Edit Button
             if (EDIT_URL && !EDIT_URL.includes("PASTE")) {
                 editBtn.href = EDIT_URL;
             } else {
@@ -339,8 +353,12 @@
             document.getElementById('no-results').classList.add('hidden');
 
             gallery.innerHTML = watches.map(watch => {
-                const imageSrc = watch.ImageURL && watch.ImageURL.trim() !== '' 
-                    ? watch.ImageURL 
+                // Use the new helper function to process the URL
+                const rawUrl = watch.ImageURL;
+                const processedUrl = processImage(rawUrl);
+                
+                const imageSrc = processedUrl 
+                    ? processedUrl 
                     : 'https://placehold.co/600x400/1e293b/475569?text=No+Image';
 
                 // Check for Notes

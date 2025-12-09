@@ -237,29 +237,53 @@
             filterAndRender(e.target.value.toLowerCase());
         });
 
-        function fetchData() {
-            const cacheBuster = SHEET_URL + (SHEET_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(cacheBuster);
+// --- RESILIENT DATA FETCHER ---
+        
+        // List of proxies to try, in order of preference
+        const PROXY_LIST = [
+            'https://corsproxy.io/?',                    // Proxy A (Fastest)
+            'https://api.allorigins.win/raw?url=',       // Proxy B (Best global compatibility)
+            'https://thingproxy.freeboard.io/fetch/'     // Proxy C (Emergency backup)
+        ];
 
-            Papa.parse(proxyUrl, {
+        function fetchData(proxyIndex = 0) {
+            // If we ran out of proxies to try, show the error
+            if (proxyIndex >= PROXY_LIST.length) {
+                showError("Connection failed across all network proxies. Please try again later.");
+                syncIcon.classList.remove('animate-spin');
+                return;
+            }
+
+            // Construct URL with the current proxy
+            const currentProxy = PROXY_LIST[proxyIndex];
+            const cacheBuster = SHEET_URL + (SHEET_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+            const fullUrl = currentProxy + encodeURIComponent(cacheBuster);
+
+            console.log(`Attempting connection via Proxy ${proxyIndex + 1}: ${currentProxy}`);
+
+            Papa.parse(fullUrl, {
                 download: true,
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
                     syncIcon.classList.remove('animate-spin');
+                    
                     if (results.data && results.data.length > 0) {
+                        console.log("Success!");
                         allWatches = results.data.sort((a, b) => 
                             new Date(b.PurchaseDate) - new Date(a.PurchaseDate)
                         );
                         initializeSuccess();
                     } else {
-                        showError("Connected to Sheet, but found no data.");
+                        // Data was empty, try next proxy
+                        console.warn("Proxy returned empty data, trying backup...");
+                        fetchData(proxyIndex + 1);
                     }
                 },
                 error: function(err) { 
-                    syncIcon.classList.remove('animate-spin');
-                    console.error("PapaParse Error:", err); 
-                    showError("Network Error. The proxy might be blocking the request."); 
+                    console.warn(`Proxy ${proxyIndex + 1} failed. Switching to backup...`);
+                    // Recursively try the next proxy in the list
+                    fetchData(proxyIndex + 1);
                 }
             });
         }

@@ -1,12 +1,13 @@
-⌚ Watch Collection Tracker
+⌚ Enrico's Watch Collection
 
 A minimalist, serverless Progressive Web App (PWA) designed to track and visualize a personal watch collection. The app uses Google Sheets as a backend database, allowing for easy updates without touching a line of code.
-
 ✨ Features
 
     Google Sheets Backend: Add, remove, or edit watches using a standard spreadsheet.
 
-    Serverless Architecture: Runs entirely in the browser using HTML5, JavaScript, and Tailwind CSS.
+    Google Drive Image Support: Automatically converts Drive links into visible images.
+
+    Direct Edit Access: A button in the app takes you directly to the spreadsheet for quick updates.
 
     Analytics Dashboard: Automatically calculates total collection size, top brands, favorite movements, and latest acquisitions.
 
@@ -15,8 +16,6 @@ A minimalist, serverless Progressive Web App (PWA) designed to track and visuali
     Instant Search: Filter the collection by Brand, Model, or Reference number in real-time.
 
     iOS Native Experience: Optimized for "Add to Home Screen" on iPhone with a custom icon and full-screen display.
-
-    Force Sync: Manual refresh button to bypass browser caching and fetch the latest Google Sheet data immediately.
 
 🚀 Setup Guide
 1. Prepare the Data
@@ -29,26 +28,37 @@ Reference	Reference number	124060
 CaseSize	Diameter (include unit)	41mm
 Movement	Movement type	Automatic
 PurchaseDate	ISO Format (YYYY-MM-DD)	2023-05-12
-ImageURL	Direct link to an image	https://i.imgur.com/...jpg
-Notes	Personal description/story	Bought to celebrate...
+ImageURL	Direct link or Google Drive link	https://drive.google.com...
+Notes	Personal description/story	A gift from my wife...
+
+⚠️ Important for Images: If using Google Drive, right-click the image file in Drive, select Share, and ensure "General Access" is set to "Anyone with the link".
 2. Connect to the App
 
-    In Google Sheets, go to File > Share > Publish to web.
+    Get the Data Link:
 
-    Change "Web page" to Comma-separated values (.csv).
+        In Google Sheets, go to File > Share > Publish to web.
 
-    Click Publish and copy the link.
+        Change "Web page" to Comma-separated values (.csv).
 
-    Open index.html in this repository.
+        Click Publish and copy the link.
 
-    Find the configuration section and paste your link:
+    Get the Edit Link:
+
+        Copy the URL from your browser address bar while editing the sheet.
+
+    Update Code:
+
+        Open index.html in this repository.
+
+        Scroll to the bottom configuration section and paste both links:
     JavaScript
 
-    const SHEET_URL = "YOUR_GOOGLE_SHEET_CSV_LINK_HERE";
+    const SHEET_URL = "YOUR_PUBLISHED_CSV_LINK";
+    const EDIT_URL = "YOUR_BROWSER_EDIT_LINK";
 
 3. Deploy
 
-    Upload index.html to your GitHub repository.
+    Upload index.html to your GitHub repository (or Push via GitHub Desktop).
 
     Go to Settings > Pages.
 
@@ -66,27 +76,28 @@ Notes	Personal description/story	Bought to celebrate...
 
     Tap Add.
 
-    Note: If the icon appears as an "E", delete the bookmark, clear Safari cache, reload the page, and try again.
+    Note: If the icon does not update, delete the bookmark, clear Safari cache, and try again.
 
-🛠 Maintenance & Usage
-Adding/Removing Watches
+🛠 Maintenance
+Updating the Collection
 
-You do not need to edit the code to update your collection.
+You do not need to touch the code to add watches.
 
-    Open your Google Sheet.
+    Open the app and click the Document Icon to open your Google Sheet.
 
-    Add a new row or delete an old one.
+    Add a new row.
 
-    Open the app and click the Sync (Refresh) button in the navbar to fetch the new data.
+    Return to the app and click the Refresh Icon to sync the data immediately.
 
-Sorting
+Updating the Code (via GitHub Desktop)
 
-The app automatically sorts the collection by PurchaseDate, displaying the most recently acquired pieces first.
-Changing the Design
+    Open the project in GitHub Desktop.
 
-    Colors/Styling: The app uses Tailwind CSS via CDN. You can edit classes directly in index.html.
+    Click "Open in Visual Studio Code" to make changes (e.g., colors, title).
 
-    Icons: The app uses an SVG watch icon for the iOS home screen. To change it, update the <link rel="apple-touch-icon" ...> tag in the <head>.
+    Save the file.
+
+    In GitHub Desktop: Type a summary, click Commit to main, then click Push origin.
 
 🔧 Technology Stack
 
@@ -96,10 +107,10 @@ Changing the Design
 
     Data Parsing: PapaParse
 
-    Proxy: CorsProxy.io (To bypass CORS restrictions on Google Sheets)
+    Proxy: CorsProxy.io
 
     Hosting: GitHub Pages
 
-📄 License
+📄 About
 
-This project is open source. Feel free to fork it to track other collections (Retro Games, Camera Lenses, Vinyl Records, etc.) by simply changing the CSV headers.
+"Enrico's Watch Collection" was born out of a desire for simplicity and control. As a digital cinematographer, I wanted a tool that was clean, precise, and visually focused. This project is a serverless Progressive Web App (PWA) that acts as a digital window into my personal curation. It separates the data (Google Sheets) from the interface, ensuring that my catalogue remains portable, private, and future-proof.

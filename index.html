@@ -191,18 +191,18 @@
             moonIcon.classList.remove('hidden');
         }
 
-        // --- GOOGLE DRIVE HELPER FUNCTION ---
+// --- GOOGLE DRIVE HELPER FUNCTION ---
         function processImage(url) {
             if (!url || url.trim() === '') return null;
             let cleanUrl = url.trim();
 
             // Handle Google Drive Links
-            // Converts: https://drive.google.com/file/d/1ANyTM.../view
-            // To:       https://drive.google.com/uc?export=view&id=1ANyTM...
+            // We use the 'thumbnail' API which is faster and bypasses virus scan warnings
             if (cleanUrl.includes('drive.google.com')) {
                 const idMatch = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
                 if (idMatch && idMatch[1]) {
-                    return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+                    // &sz=w1000 requests a width of 1000px (high quality but fast)
+                    return `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1000`;
                 }
             }
             return cleanUrl;

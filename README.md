@@ -1,72 +1,65 @@
 ⌚ Enrico's Watch Collection
 
-A minimalist, serverless Progressive Web App (PWA) designed to track and visualize a personal watch collection. The app uses Google Sheets as a backend database, allowing for easy updates without touching a line of code.
-✨ Features
+A modern, serverless Progressive Web App (PWA) designed to track and visualize a personal watch collection. The app uses Google Sheets as a backend database, allowing for instant updates without touching code.
+✨ Key Features
 
-    Google Sheets Backend: Add, remove, or edit watches using a standard spreadsheet.
+    Dynamic Data Engine: The app automatically detects new columns in your spreadsheet. Add a column like "Lug-to-Lug" or "Service History" in Google Sheets, and it instantly appears on the watch cards.
 
-    Google Drive Image Support: Automatically converts Drive links into visible images.
+    Smart Sorting: Sort the collection by Date (Newest/Oldest), Brand (A-Z), or Case Size (Small/Large).
 
-    Direct Edit Access: A button in the app takes you directly to the spreadsheet for quick updates.
+    Resilient Connectivity: Uses a multi-proxy fallback system. If one connection fails (e.g., restricted networks in South Korea), it automatically switches to a backup to ensure the app always loads.
 
-    Analytics Dashboard: Automatically calculates total collection size, top brands, favorite movements, and latest acquisitions.
+    Smart Date Parsing: Intelligently handles American (MM/DD/YYYY), European (DD/MM/YYYY), and ISO (YYYY-MM-DD) date formats correctly.
 
-    Dark Mode: Built-in toggle for Light/Dark themes with local storage memory.
+    Google Drive Integration: Automatically converts standard Drive sharing links into high-speed thumbnails.
 
-    Instant Search: Filter the collection by Brand, Model, or Reference number in real-time.
+    Collection Analytics: Real-time stats on total pieces, favorite brands, most common movements, and latest acquisitions.
 
     iOS Native Experience: Optimized for "Add to Home Screen" on iPhone with a custom icon and full-screen display.
 
-🚀 Setup Guide
-1. Prepare the Data
+🚀 Setup & Configuration
+1. The Google Sheet
 
-Create a new Google Sheet. The first row must contain these exact headers (case-sensitive):
-Column Name	Description	Example
-Brand	The manufacturer	Rolex
-Model	The model name	Submariner
-Reference	Reference number	124060
-CaseSize	Diameter (include unit)	41mm
-Movement	Movement type	Automatic
-PurchaseDate	ISO Format (YYYY-MM-DD)	2023-05-12
-ImageURL	Direct link or Google Drive link	https://drive.google.com...
-Notes	Personal description/story	A gift from my wife...
+The app relies on a Google Sheet with specific headers. Required Columns:
 
-⚠️ Important for Images: If using Google Drive, right-click the image file in Drive, select Share, and ensure "General Access" is set to "Anyone with the link".
-2. Connect to the App
+    Brand
 
-    Get the Data Link:
+    Model
 
-        In Google Sheets, go to File > Share > Publish to web.
+    Reference
 
-        Change "Web page" to Comma-separated values (.csv).
+    ImageURL
 
-        Click Publish and copy the link.
+    PurchaseDate (or Date Acquired)
 
-    Get the Edit Link:
+Optional / Dynamic Columns: You can add any other column you want (e.g., Case Size, Lug Width, Movement, Notes). The app will automatically generate a label and value for them in the grid.
 
-        Copy the URL from your browser address bar while editing the sheet.
+⚠️ Image Rules: If using Google Drive, ensure the image file permission is set to "General Access: Anyone with the link".
+2. Linking the Sheet
 
-    Update Code:
+The connection links are hardcoded in index.html for stability. To change the source sheet:
 
-        Open index.html in this repository.
+    Open index.html.
 
-        Scroll to the bottom configuration section and paste both links:
+    Scroll to the bottom <script> section.
+
+    Update these two variables:
     JavaScript
 
     const SHEET_URL = "YOUR_PUBLISHED_CSV_LINK";
-    const EDIT_URL = "YOUR_BROWSER_EDIT_LINK";
+    const EDIT_URL = "YOUR_GOOGLE_SHEET_EDIT_LINK";
 
-3. Deploy
+3. Deploying
 
-    Upload index.html to your GitHub repository (or Push via GitHub Desktop).
+    Upload index.html to your GitHub repository.
 
     Go to Settings > Pages.
 
-    Select main branch and /root folder.
+    Select the main branch and click Save.
 
-    Click Save. Your app will be live at https://username.github.io/repo-name.
+    Your app will be live at https://username.github.io/repo-name.
 
-📱 How to Install on iPhone
+📱 How to Use on iPhone
 
     Open your live GitHub link in Safari.
 
@@ -76,29 +69,19 @@ Notes	Personal description/story	A gift from my wife...
 
     Tap Add.
 
-    Note: If the icon does not update, delete the bookmark, clear Safari cache, and try again.
+    Tip: If the icon doesn't update, delete the bookmark, clear Safari cache, and try again.
 
-🛠 Maintenance
-Updating the Collection
+🛠 Troubleshooting
 
-You do not need to touch the code to add watches.
+"Connection Failed" Error The app uses a proxy to fetch data from Google. If you see this error, the app automatically retries using backup proxies (corsproxy.io -> allorigins.win -> thingproxy). Wait 5 seconds and the data usually appears.
 
-    Open the app and click the Document Icon to open your Google Sheet.
+Images Not Loading
 
-    Add a new row.
+    Check that the link in the Google Sheet is correct.
 
-    Return to the app and click the Refresh Icon to sync the data immediately.
+    Crucial: Check that the file permissions in Google Drive are set to "Public/Anyone with the link".
 
-Updating the Code (via GitHub Desktop)
-
-    Open the project in GitHub Desktop.
-
-    Click "Open in Visual Studio Code" to make changes (e.g., colors, title).
-
-    Save the file.
-
-    In GitHub Desktop: Type a summary, click Commit to main, then click Push origin.
-
+Sorting Looks Wrong The app attempts to parse "Case Size" intelligently (stripping "mm" to sort by number). Ensure your size column contains numbers (e.g., 41mm or 41). For dates, the app prefers YYYY-MM-DD but accepts DD/MM/YYYY.
 🔧 Technology Stack
 
     Frontend: HTML5, Vanilla JavaScript
@@ -107,10 +90,8 @@ Updating the Code (via GitHub Desktop)
 
     Data Parsing: PapaParse
 
-    Proxy: CorsProxy.io
-
     Hosting: GitHub Pages
 
-📄 About
+🤖 Credits
 
-"Enrico's Watch Collection" was born out of a desire for simplicity and control. As a digital cinematographer, I wanted a tool that was clean, precise, and visually focused. This project is a serverless Progressive Web App (PWA) that acts as a digital window into my personal curation. It separates the data (Google Sheets) from the interface, ensuring that my catalogue remains portable, private, and future-proof.
+This application was architected and developed with the assistance of Google Gemini, acting as a technical consultant and coding partner.

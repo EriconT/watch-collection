@@ -37,6 +37,8 @@
         body { font-family: 'Inter', sans-serif; }
         .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Custom scrollbar for the dropdown */
+        select { -webkit-appearance: none; appearance: none; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen pb-20 transition-colors duration-300">
@@ -97,14 +99,28 @@
             <div class="flex flex-wrap gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400" id="brand-legend"></div>
         </div>
 
-        <div class="max-w-md mx-auto mb-10 sticky top-24 z-40">
-            <div class="relative group shadow-lg rounded-full">
+        <div class="max-w-xl mx-auto mb-10 sticky top-24 z-40 flex gap-3">
+            <div class="relative group shadow-lg rounded-full flex-1">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <input type="text" id="search-input" class="block w-full pl-11 pr-4 py-3 border-none rounded-full bg-white dark:bg-slate-800 dark:text-white dark:placeholder-slate-500 text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all outline-none" placeholder="Filter by brand, model, or reference..." disabled>
+                <input type="text" id="search-input" class="block w-full pl-11 pr-4 py-3 border-none rounded-l-full rounded-r-full sm:rounded-r-none bg-white dark:bg-slate-800 dark:text-white dark:placeholder-slate-500 text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all outline-none" placeholder="Search..." disabled>
+            </div>
+
+            <div class="relative shadow-lg rounded-full w-1/3 min-w-[130px]">
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <select id="sort-select" class="block w-full pl-4 pr-8 py-3 border-none rounded-r-full rounded-l-full sm:rounded-l-none bg-white dark:bg-slate-800 dark:text-white text-slate-700 text-sm font-medium focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all outline-none cursor-pointer">
+                    <option value="date-desc">Newest</option>
+                    <option value="date-asc">Oldest</option>
+                    <option value="brand-asc">Brand (A-Z)</option>
+                    <option value="brand-desc">Brand (Z-A)</option>
+                    <option value="size-asc">Size (Small)</option>
+                    <option value="size-desc">Size (Large)</option>
+                </select>
             </div>
         </div>
 
@@ -128,9 +144,8 @@
 
         // --- GLOBAL VARIABLES ---
         let allWatches = [];
-        // Note: 'PurchaseDate' is removed from here because we handle it via flexible detection now
+        let currentSort = 'date-desc';
         const IGNORE_KEYS = ['Brand', 'Model', 'Reference', 'ImageURL', 'Notes'];
-        
         const PROXY_LIST = [
             'https://corsproxy.io/?',                    
             'https://api.allorigins.win/raw?url=',       
@@ -142,6 +157,7 @@
         const dashboard = document.getElementById('dashboard');
         const loadingIndicator = document.getElementById('loading-indicator');
         const searchInput = document.getElementById('search-input');
+        const sortSelect = document.getElementById('sort-select');
         const statusBadge = document.getElementById('status-badge');
         const errorDetails = document.getElementById('error-details');
         const themeToggleBtn = document.getElementById('theme-toggle');
@@ -181,27 +197,20 @@
             return cleanUrl;
         }
 
-        // SMART DATE FINDER: Finds the date column even if you renamed it
         function getWatchDate(watch) {
-            // Check common column names
             return watch.PurchaseDate || watch.Date || watch['Date Acquired'] || watch['Purchase Date'] || watch['Acquired'] || '';
         }
 
-        // ROBUST DATE PARSER
         function getTimestamp(dateStr) {
             if (!dateStr) return 0;
-            // 1. ISO (2025-12-24)
             if (dateStr.includes('-')) return new Date(dateStr).getTime();
-            // 2. UK/Italian (24/12/2025)
             if (dateStr.includes('/')) {
                 const parts = dateStr.split('/');
                 if (parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime();
             }
-            // 3. Fallback
             return new Date(dateStr).getTime();
         }
 
-        // PRETTY DISPLAY
         function formatToISO(dateStr) {
             if (!dateStr) return '';
             if (dateStr.includes('-')) return dateStr;
@@ -210,6 +219,28 @@
                 if(parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
             }
             return dateStr;
+        }
+
+        // --- SORT LOGIC ---
+        function sortCollection(watches, criteria) {
+            return [...watches].sort((a, b) => {
+                switch (criteria) {
+                    case 'date-desc': // Newest First
+                        return getTimestamp(getWatchDate(b)) - getTimestamp(getWatchDate(a));
+                    case 'date-asc': // Oldest First
+                        return getTimestamp(getWatchDate(a)) - getTimestamp(getWatchDate(b));
+                    case 'brand-asc':
+                        return (a.Brand || '').localeCompare(b.Brand || '');
+                    case 'brand-desc':
+                        return (b.Brand || '').localeCompare(a.Brand || '');
+                    case 'size-asc':
+                        return parseFloat(a.CaseSize || 0) - parseFloat(b.CaseSize || 0);
+                    case 'size-desc':
+                        return parseFloat(b.CaseSize || 0) - parseFloat(a.CaseSize || 0);
+                    default:
+                        return 0;
+                }
+            });
         }
 
         // --- FETCH LOGIC ---
@@ -227,7 +258,14 @@
             fetchData();
         });
 
-        searchInput.addEventListener('input', (e) => filterAndRender(e.target.value.toLowerCase()));
+        searchInput.addEventListener('input', (e) => {
+            filterAndRender();
+        });
+
+        sortSelect.addEventListener('change', (e) => {
+            currentSort = e.target.value;
+            filterAndRender();
+        });
 
         function fetchData(proxyIndex = 0) {
             if (proxyIndex >= PROXY_LIST.length) {
@@ -244,20 +282,7 @@
                 complete: function(results) {
                     syncIcon.classList.remove('animate-spin');
                     if (results.data && results.data.length > 0) {
-                        
-                        // --- SMART SORT ---
-                        allWatches = results.data.sort((a, b) => {
-                            // Automatically find the correct date column
-                            const dateA = getWatchDate(a);
-                            const dateB = getWatchDate(b);
-                            
-                            const timeA = getTimestamp(dateA);
-                            const timeB = getTimestamp(dateB);
-                            
-                            // Sort Newest First (Descending)
-                            return timeB - timeA;
-                        });
-
+                        allWatches = results.data;
                         initializeSuccess();
                     } else {
                         fetchData(proxyIndex + 1);
@@ -275,16 +300,30 @@
             statusBadge.textContent = "Live";
             statusBadge.classList.remove('animate-pulse', 'bg-blue-50', 'text-blue-600', 'dark:bg-slate-800', 'dark:text-blue-400');
             statusBadge.classList.add('bg-green-50', 'text-green-600', 'dark:bg-green-900/30', 'dark:text-green-400');
+            
             renderStats(allWatches);
-            renderCollection(allWatches);
+            filterAndRender(); // Initial render with default sort
         }
 
-        function filterAndRender(term) {
-            const filtered = allWatches.filter(watch => Object.values(watch).some(val => String(val).toLowerCase().includes(term)));
+        function filterAndRender() {
+            const term = searchInput.value.toLowerCase();
+            
+            // 1. Filter
+            let filtered = allWatches.filter(watch => 
+                Object.values(watch).some(val => String(val).toLowerCase().includes(term))
+            );
+
+            // 2. Sort
+            filtered = sortCollection(filtered, currentSort);
+
+            // 3. Render
             renderCollection(filtered);
         }
 
         function renderStats(watches) {
+            // Sort by Date Desc for Stats regardless of UI sort
+            const chronWatches = sortCollection(watches, 'date-desc');
+
             document.getElementById('stat-total').textContent = watches.length;
             const brands = {}; const movements = {};
             watches.forEach(w => {
@@ -296,8 +335,8 @@
             document.getElementById('stat-brand').textContent = Object.keys(brands).length ? Object.keys(brands).reduce((a, b) => brands[a] > brands[b] ? a : b) : '-';
             document.getElementById('stat-movement').textContent = Object.keys(movements).length ? Object.keys(movements).reduce((a, b) => movements[a] > movements[b] ? a : b) : '-';
             
-            if(watches[0]) {
-                 const dateStr = getWatchDate(watches[0]);
+            if(chronWatches[0]) {
+                 const dateStr = getWatchDate(chronWatches[0]);
                  const t = getTimestamp(dateStr);
                  const d = new Date(t);
                  document.getElementById('stat-latest').textContent = isNaN(d.getFullYear()) ? '-' : d.getFullYear();
@@ -330,20 +369,15 @@
                 const hasNotes = watch.Notes && watch.Notes.trim() !== '';
                 const notesHtml = hasNotes ? `<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800"><p class="text-sm text-slate-500 dark:text-slate-400 italic">"${watch.Notes}"</p></div>` : '';
 
-                // Find the date dynamically
                 const rawDate = getWatchDate(watch);
                 const displayDate = formatToISO(rawDate);
                 
                 let gridHtml = '';
-                
-                // ONLY show date block if we actually found a date
                 if (displayDate) {
                     gridHtml += `<div><span class="text-slate-400 dark:text-slate-500 block mb-0.5">Date Acquired</span><span class="font-medium text-slate-700 dark:text-slate-300">${displayDate}</span></div>`;
                 }
 
-                // Add Dynamic Columns (Excluding core fields AND the found date column)
                 Object.keys(watch).forEach(key => {
-                    // Don't duplicate the date column if it was found
                     if (IGNORE_KEYS.includes(key) || !watch[key] || watch[key].trim() === '') return;
                     if (key === 'PurchaseDate' || key === 'Date' || key === 'Date Acquired' || key === 'Purchase Date') return;
                     

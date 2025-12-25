@@ -93,7 +93,6 @@
                     <p class="text-xl font-bold text-slate-700 dark:text-slate-200 truncate" id="stat-latest">-</p>
                 </div>
             </div>
-
             <div class="bg-white dark:bg-slate-900 p-1 rounded-full shadow-sm flex h-4 overflow-hidden" id="brand-bar"></div>
             <div class="flex flex-wrap gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400" id="brand-legend"></div>
         </div>
@@ -112,34 +111,31 @@
         <div id="loading-indicator" class="flex justify-center py-20">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 dark:border-slate-600"></div>
         </div>
-
         <div id="error-message" class="hidden text-center py-10 px-4">
             <p class="text-red-500 dark:text-red-400 font-bold mb-2">Connection Failed</p>
             <p class="text-sm text-slate-500 dark:text-slate-400" id="error-details">Could not connect to Google Sheets.</p>
         </div>
-
         <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden fade-in"></div>
-
-        <div id="no-results" class="hidden text-center py-10 text-slate-400 dark:text-slate-500">
-            No matching watches found.
-        </div>
+        <div id="no-results" class="hidden text-center py-10 text-slate-400 dark:text-slate-500">No matching watches found.</div>
     </main>
 
     <script>
         // ==========================================
         // CONFIGURATION: PASTE YOUR LINKS BELOW
         // ==========================================
-        
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQY4iwH93pGLbTnMgV4uN4sv4zZTjvQ1PyBHBVBl4LFDSqFS8j7-96iMOX2q9d6el2w9iDyGa-6g-L/pub?output=csv"; 
         const EDIT_URL = "https://docs.google.com/spreadsheets/d/1c2o-pGvXUZFE-P9639cYjC36nHZHCypAQ6BCd9AA_Ag/edit?gid=0#gid=0";
 
-        // --- RESILIENT DATA FETCHER & DYNAMIC LOGIC ---
-        
+        // --- GLOBAL VARIABLES ---
         let allWatches = [];
-        
-        // These are the columns we treat specially (don't put them in the generic grid)
         const SPECIAL_KEYS = ['Brand', 'Model', 'Reference', 'ImageURL', 'Notes', 'PurchaseDate'];
+        const PROXY_LIST = [
+            'https://corsproxy.io/?',                    
+            'https://api.allorigins.win/raw?url=',       
+            'https://thingproxy.freeboard.io/fetch/'     
+        ];
 
+        // --- DOM ELEMENTS ---
         const gallery = document.getElementById('gallery');
         const dashboard = document.getElementById('dashboard');
         const loadingIndicator = document.getElementById('loading-indicator');
@@ -154,7 +150,7 @@
         const moonIcon = document.getElementById('moon-icon');
         const htmlElement = document.documentElement;
 
-        // Theme Logic
+        // --- THEME LOGIC ---
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             enableDarkMode();
         } else {
@@ -168,11 +164,12 @@
                 enableDarkMode(); localStorage.setItem('theme', 'dark');
             }
         });
-
         function enableDarkMode() { htmlElement.classList.add('dark'); moonIcon.classList.add('hidden'); sunIcon.classList.remove('hidden'); }
         function enableLightMode() { htmlElement.classList.remove('dark'); sunIcon.classList.add('hidden'); moonIcon.classList.remove('hidden'); }
 
-        // Google Drive Helper
+        // --- HELPER FUNCTIONS ---
+        
+        // Google Drive Thumbnail Logic
         function processImage(url) {
             if (!url || url.trim() === '') return null;
             let cleanUrl = url.trim();
@@ -183,13 +180,16 @@
             return cleanUrl;
         }
 
-        // --- PROXY LIST & FETCH LOGIC ---
-        const PROXY_LIST = [
-            'https://corsproxy.io/?',                    
-            'https://api.allorigins.win/raw?url=',       
-            'https://thingproxy.freeboard.io/fetch/'     
-        ];
+        // FORMAT DATE TO ISO (YYYY-MM-DD)
+        // This fixes the visual display even if Google Sheet sends weird formats
+        function formatToISO(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString; // Return original if parse fails
+            return date.toISOString().split('T')[0];
+        }
 
+        // --- FETCH LOGIC ---
         window.addEventListener('DOMContentLoaded', () => {
             if (!SHEET_URL || SHEET_URL.includes("PASTE_YOUR_CSV_LINK")) {
                 showError("Please open index.html and paste your Google Sheet Link into the code.");
@@ -212,7 +212,7 @@
 
         function fetchData(proxyIndex = 0) {
             if (proxyIndex >= PROXY_LIST.length) {
-                showError("Connection failed across all network proxies. Please try again later.");
+                showError("Connection failed across all proxies.");
                 syncIcon.classList.remove('animate-spin');
                 return;
             }
@@ -226,20 +226,15 @@
                     syncIcon.classList.remove('animate-spin');
                     if (results.data && results.data.length > 0) {
                         
-                        // --- SAFE SORT LOGIC ---
+                        // --- SORT LOGIC (Newest First) ---
                         allWatches = results.data.sort((a, b) => {
-                            // Convert to dates or default to Epoch if invalid
                             const dateA = new Date(a.PurchaseDate || '');
                             const dateB = new Date(b.PurchaseDate || '');
-                            
-                            // Check if valid
+                            // If invalid date, push to end
                             const valA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
                             const valB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
-
-                            // Sort Descending (Newest First)
                             return valB - valA;
                         });
-                        // -----------------------
 
                         initializeSuccess();
                     } else {
@@ -279,13 +274,11 @@
             document.getElementById('stat-brand').textContent = Object.keys(brands).length ? Object.keys(brands).reduce((a, b) => brands[a] > brands[b] ? a : b) : '-';
             document.getElementById('stat-movement').textContent = Object.keys(movements).length ? Object.keys(movements).reduce((a, b) => movements[a] > movements[b] ? a : b) : '-';
             
-            // Safe check for stats latest year
             if(watches[0] && watches[0].PurchaseDate) {
                  const d = new Date(watches[0].PurchaseDate);
                  document.getElementById('stat-latest').textContent = isNaN(d.getFullYear()) ? '-' : d.getFullYear();
             }
             
-            // Bar Logic
             const barContainer = document.getElementById('brand-bar');
             const legendContainer = document.getElementById('brand-legend');
             barContainer.innerHTML = ''; legendContainer.innerHTML = '';
@@ -300,7 +293,6 @@
             });
         }
 
-        // --- DYNAMIC RENDERER ---
         function renderCollection(watches) {
             if (watches.length === 0) {
                 gallery.innerHTML = '';
@@ -311,13 +303,15 @@
 
             gallery.innerHTML = watches.map(watch => {
                 const imageSrc = processImage(watch.ImageURL) || 'https://placehold.co/600x400/1e293b/475569?text=No+Image';
-                
                 const hasNotes = watch.Notes && watch.Notes.trim() !== '';
                 const notesHtml = hasNotes ? `<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800"><p class="text-sm text-slate-500 dark:text-slate-400 italic">"${watch.Notes}"</p></div>` : '';
 
+                // Force Format Date
+                const displayDate = formatToISO(watch.PurchaseDate);
+
                 let gridHtml = '';
-                // Date logic
-                gridHtml += `<div><span class="text-slate-400 dark:text-slate-500 block mb-0.5">Date Acquired</span><span class="font-medium text-slate-700 dark:text-slate-300">${watch.PurchaseDate}</span></div>`;
+                // Date logic with forced ISO
+                gridHtml += `<div><span class="text-slate-400 dark:text-slate-500 block mb-0.5">Date Acquired</span><span class="font-medium text-slate-700 dark:text-slate-300">${displayDate}</span></div>`;
 
                 Object.keys(watch).forEach(key => {
                     if (SPECIAL_KEYS.includes(key) || !watch[key] || watch[key].trim() === '') return;

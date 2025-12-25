@@ -54,7 +54,7 @@
                     Syncing...
                 </div>
                 
-                <button id="sync-btn" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Force Sync from Google">
+                <button id="sync-btn" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Force Sync">
                     <svg id="sync-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
 
@@ -105,13 +105,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <input 
-                    type="text" 
-                    id="search-input"
-                    class="block w-full pl-11 pr-4 py-3 border-none rounded-full bg-white dark:bg-slate-800 dark:text-white dark:placeholder-slate-500 text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all outline-none" 
-                    placeholder="Filter by brand, model, or reference..."
-                    disabled
-                >
+                <input type="text" id="search-input" class="block w-full pl-11 pr-4 py-3 border-none rounded-full bg-white dark:bg-slate-800 dark:text-white dark:placeholder-slate-500 text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all outline-none" placeholder="Filter by brand, model, or reference..." disabled>
             </div>
         </div>
 
@@ -129,7 +123,6 @@
         <div id="no-results" class="hidden text-center py-10 text-slate-400 dark:text-slate-500">
             No matching watches found.
         </div>
-
     </main>
 
     <script>
@@ -138,12 +131,14 @@
         // ==========================================
         
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQY4iwH93pGLbTnMgV4uN4sv4zZTjvQ1PyBHBVBl4LFDSqFS8j7-96iMOX2q9d6el2w9iDyGa-6g-L/pub?output=csv"; 
-        const EDIT_URL = "PAhttps://docs.google.com/spreadsheets/d/1c2o-pGvXUZFE-P9639cYjC36nHZHCypAQ6BCd9AA_Ag/edit?gid=0#gid=0";
+        const EDIT_URL = "https://docs.google.com/spreadsheets/d/1c2o-pGvXUZFE-P9639cYjC36nHZHCypAQ6BCd9AA_Ag/edit?gid=0#gid=0";
 
-
-        // --- APP LOGIC BELOW ---
+        // --- RESILIENT DATA FETCHER & DYNAMIC LOGIC ---
         
         let allWatches = [];
+        
+        // These are the columns we treat specially (don't put them in the generic grid)
+        const SPECIAL_KEYS = ['Brand', 'Model', 'Reference', 'ImageURL', 'Notes', 'PurchaseDate'];
 
         const gallery = document.getElementById('gallery');
         const dashboard = document.getElementById('dashboard');
@@ -151,19 +146,16 @@
         const searchInput = document.getElementById('search-input');
         const statusBadge = document.getElementById('status-badge');
         const errorDetails = document.getElementById('error-details');
-        
         const themeToggleBtn = document.getElementById('theme-toggle');
         const syncBtn = document.getElementById('sync-btn');
         const syncIcon = document.getElementById('sync-icon');
         const editBtn = document.getElementById('edit-btn');
-        
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
         const htmlElement = document.documentElement;
 
-        // --- DARK MODE LOGIC ---
-        if (localStorage.getItem('theme') === 'dark' || 
-           (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        // Theme Logic
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             enableDarkMode();
         } else {
             enableLightMode();
@@ -171,57 +163,40 @@
 
         themeToggleBtn.addEventListener('click', () => {
             if (htmlElement.classList.contains('dark')) {
-                enableLightMode();
-                localStorage.setItem('theme', 'light');
+                enableLightMode(); localStorage.setItem('theme', 'light');
             } else {
-                enableDarkMode();
-                localStorage.setItem('theme', 'dark');
+                enableDarkMode(); localStorage.setItem('theme', 'dark');
             }
         });
 
-        function enableDarkMode() {
-            htmlElement.classList.add('dark');
-            moonIcon.classList.add('hidden');
-            sunIcon.classList.remove('hidden');
-        }
+        function enableDarkMode() { htmlElement.classList.add('dark'); moonIcon.classList.add('hidden'); sunIcon.classList.remove('hidden'); }
+        function enableLightMode() { htmlElement.classList.remove('dark'); sunIcon.classList.add('hidden'); moonIcon.classList.remove('hidden'); }
 
-        function enableLightMode() {
-            htmlElement.classList.remove('dark');
-            sunIcon.classList.add('hidden');
-            moonIcon.classList.remove('hidden');
-        }
-
-// --- GOOGLE DRIVE HELPER FUNCTION ---
+        // Google Drive Helper
         function processImage(url) {
             if (!url || url.trim() === '') return null;
             let cleanUrl = url.trim();
-
-            // Handle Google Drive Links
-            // We use the 'thumbnail' API which is faster and bypasses virus scan warnings
             if (cleanUrl.includes('drive.google.com')) {
                 const idMatch = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                if (idMatch && idMatch[1]) {
-                    // &sz=w1000 requests a width of 1000px (high quality but fast)
-                    return `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1000`;
-                }
+                if (idMatch && idMatch[1]) return `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1000`;
             }
             return cleanUrl;
         }
 
-        // --- APP LOGIC ---
+        // --- PROXY LIST & FETCH LOGIC ---
+        const PROXY_LIST = [
+            'https://corsproxy.io/?',                    
+            'https://api.allorigins.win/raw?url=',       
+            'https://thingproxy.freeboard.io/fetch/'     
+        ];
 
         window.addEventListener('DOMContentLoaded', () => {
             if (!SHEET_URL || SHEET_URL.includes("PASTE_YOUR_CSV_LINK")) {
                 showError("Please open index.html and paste your Google Sheet Link into the code.");
                 return;
             }
-            
-            if (EDIT_URL && !EDIT_URL.includes("PASTE")) {
-                editBtn.href = EDIT_URL;
-            } else {
-                editBtn.classList.add('hidden');
-            }
-
+            if (EDIT_URL && !EDIT_URL.includes("PASTE")) editBtn.href = EDIT_URL;
+            else editBtn.classList.add('hidden');
             fetchData();
         });
 
@@ -233,58 +208,30 @@
             fetchData();
         });
 
-        searchInput.addEventListener('input', (e) => {
-            filterAndRender(e.target.value.toLowerCase());
-        });
-
-// --- RESILIENT DATA FETCHER ---
-        
-        // List of proxies to try, in order of preference
-        const PROXY_LIST = [
-            'https://corsproxy.io/?',                    // Proxy A (Fastest)
-            'https://api.allorigins.win/raw?url=',       // Proxy B (Best global compatibility)
-            'https://thingproxy.freeboard.io/fetch/'     // Proxy C (Emergency backup)
-        ];
+        searchInput.addEventListener('input', (e) => filterAndRender(e.target.value.toLowerCase()));
 
         function fetchData(proxyIndex = 0) {
-            // If we ran out of proxies to try, show the error
             if (proxyIndex >= PROXY_LIST.length) {
                 showError("Connection failed across all network proxies. Please try again later.");
                 syncIcon.classList.remove('animate-spin');
                 return;
             }
-
-            // Construct URL with the current proxy
             const currentProxy = PROXY_LIST[proxyIndex];
             const cacheBuster = SHEET_URL + (SHEET_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
             const fullUrl = currentProxy + encodeURIComponent(cacheBuster);
 
-            console.log(`Attempting connection via Proxy ${proxyIndex + 1}: ${currentProxy}`);
-
             Papa.parse(fullUrl, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
+                download: true, header: true, skipEmptyLines: true,
                 complete: function(results) {
                     syncIcon.classList.remove('animate-spin');
-                    
                     if (results.data && results.data.length > 0) {
-                        console.log("Success!");
-                        allWatches = results.data.sort((a, b) => 
-                            new Date(b.PurchaseDate) - new Date(a.PurchaseDate)
-                        );
+                        allWatches = results.data.sort((a, b) => new Date(b.PurchaseDate) - new Date(a.PurchaseDate));
                         initializeSuccess();
                     } else {
-                        // Data was empty, try next proxy
-                        console.warn("Proxy returned empty data, trying backup...");
                         fetchData(proxyIndex + 1);
                     }
                 },
-                error: function(err) { 
-                    console.warn(`Proxy ${proxyIndex + 1} failed. Switching to backup...`);
-                    // Recursively try the next proxy in the list
-                    fetchData(proxyIndex + 1);
-                }
+                error: function(err) { fetchData(proxyIndex + 1); }
             });
         }
 
@@ -293,81 +240,47 @@
             gallery.classList.remove('hidden');
             dashboard.classList.remove('hidden');
             searchInput.disabled = false;
-            
             statusBadge.textContent = "Live";
             statusBadge.classList.remove('animate-pulse', 'bg-blue-50', 'text-blue-600', 'dark:bg-slate-800', 'dark:text-blue-400');
             statusBadge.classList.add('bg-green-50', 'text-green-600', 'dark:bg-green-900/30', 'dark:text-green-400');
-
             renderStats(allWatches);
             renderCollection(allWatches);
         }
 
         function filterAndRender(term) {
-            const filtered = allWatches.filter(watch => {
-                return Object.values(watch).some(val => 
-                    String(val).toLowerCase().includes(term)
-                );
-            });
+            const filtered = allWatches.filter(watch => Object.values(watch).some(val => String(val).toLowerCase().includes(term)));
             renderCollection(filtered);
         }
 
         function renderStats(watches) {
             document.getElementById('stat-total').textContent = watches.length;
-
-            const brands = {};
-            const movements = {};
-            
+            const brands = {}; const movements = {};
             watches.forEach(w => {
                 const b = (w.Brand || 'Unknown').trim();
                 const m = (w.Movement || 'Unknown').trim();
                 brands[b] = (brands[b] || 0) + 1;
                 movements[m] = (movements[m] || 0) + 1;
             });
-
-            const topBrand = Object.keys(brands).length ? Object.keys(brands).reduce((a, b) => brands[a] > brands[b] ? a : b) : '-';
-            document.getElementById('stat-brand').textContent = topBrand;
-
-            const topMov = Object.keys(movements).length ? Object.keys(movements).reduce((a, b) => movements[a] > movements[b] ? a : b) : '-';
-            document.getElementById('stat-movement').textContent = topMov;
-
-            if(watches[0] && watches[0].PurchaseDate) {
-                document.getElementById('stat-latest').textContent = watches[0].PurchaseDate.split('-')[0];
-            }
-
+            document.getElementById('stat-brand').textContent = Object.keys(brands).length ? Object.keys(brands).reduce((a, b) => brands[a] > brands[b] ? a : b) : '-';
+            document.getElementById('stat-movement').textContent = Object.keys(movements).length ? Object.keys(movements).reduce((a, b) => movements[a] > movements[b] ? a : b) : '-';
+            if(watches[0] && watches[0].PurchaseDate) document.getElementById('stat-latest').textContent = watches[0].PurchaseDate.split('-')[0];
+            
+            // Bar Logic
             const barContainer = document.getElementById('brand-bar');
             const legendContainer = document.getElementById('brand-legend');
-            barContainer.innerHTML = ''; 
-            legendContainer.innerHTML = ''; 
-
-            const colors = [
-                'bg-slate-800 dark:bg-slate-600', 
-                'bg-blue-600 dark:bg-blue-500', 
-                'bg-slate-500 dark:bg-slate-400', 
-                'bg-blue-400 dark:bg-blue-300', 
-                'bg-slate-300 dark:bg-slate-200'
-            ];
+            barContainer.innerHTML = ''; legendContainer.innerHTML = '';
+            const colors = ['bg-slate-800 dark:bg-slate-600', 'bg-blue-600 dark:bg-blue-500', 'bg-slate-500 dark:bg-slate-400', 'bg-blue-400 dark:bg-blue-300', 'bg-slate-300 dark:bg-slate-200'];
             let colorIndex = 0;
-            
-            Object.entries(brands)
-                .sort(([,a], [,b]) => b - a)
-                .forEach(([brand, count]) => {
-                    const percentage = (count / watches.length) * 100;
-                    const colorClass = colors[colorIndex % colors.length];
-                    
-                    const segment = document.createElement('div');
-                    segment.className = `${colorClass} h-full`;
-                    segment.style.width = `${percentage}%`;
-                    barContainer.appendChild(segment);
-
-                    const legendItem = document.createElement('div');
-                    legendItem.className = 'flex items-center gap-1';
-                    legendItem.innerHTML = `<div class="w-2 h-2 rounded-full ${colorClass.split(' ')[0]}"></div><span>${brand} (${count})</span>`;
-                    legendContainer.appendChild(legendItem);
-
-                    colorIndex++;
-                });
+            Object.entries(brands).sort(([,a], [,b]) => b - a).forEach(([brand, count]) => {
+                const percentage = (count / watches.length) * 100;
+                const colorClass = colors[colorIndex % colors.length];
+                const segment = document.createElement('div'); segment.className = `${colorClass} h-full`; segment.style.width = `${percentage}%`; barContainer.appendChild(segment);
+                const legendItem = document.createElement('div'); legendItem.className = 'flex items-center gap-1'; legendItem.innerHTML = `<div class="w-2 h-2 rounded-full ${colorClass.split(' ')[0]}"></div><span>${brand} (${count})</span>`; legendContainer.appendChild(legendItem);
+                colorIndex++;
+            });
         }
 
+        // --- DYNAMIC RENDERER ---
         function renderCollection(watches) {
             if (watches.length === 0) {
                 gallery.innerHTML = '';
@@ -377,21 +290,35 @@
             document.getElementById('no-results').classList.add('hidden');
 
             gallery.innerHTML = watches.map(watch => {
-                // Use the new helper function to process the URL
-                const rawUrl = watch.ImageURL;
-                const processedUrl = processImage(rawUrl);
+                const imageSrc = processImage(watch.ImageURL) || 'https://placehold.co/600x400/1e293b/475569?text=No+Image';
                 
-                const imageSrc = processedUrl 
-                    ? processedUrl 
-                    : 'https://placehold.co/600x400/1e293b/475569?text=No+Image';
-
-                // Check for Notes
+                // 1. Build Notes (Condition check)
                 const hasNotes = watch.Notes && watch.Notes.trim() !== '';
-                const notesHtml = hasNotes ? `
-                    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <p class="text-sm text-slate-500 dark:text-slate-400 italic">"${watch.Notes}"</p>
+                const notesHtml = hasNotes ? `<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800"><p class="text-sm text-slate-500 dark:text-slate-400 italic">"${watch.Notes}"</p></div>` : '';
+
+                // 2. Build Dynamic Grid
+                let gridHtml = '';
+                
+                // 2a. Always show Date First
+                gridHtml += `
+                    <div>
+                        <span class="text-slate-400 dark:text-slate-500 block mb-0.5">Date Acquired</span>
+                        <span class="font-medium text-slate-700 dark:text-slate-300">${watch.PurchaseDate}</span>
                     </div>
-                ` : '';
+                `;
+
+                // 2b. Loop through ALL other keys
+                Object.keys(watch).forEach(key => {
+                    // Skip the Special keys (handled elsewhere) and empty values
+                    if (SPECIAL_KEYS.includes(key) || !watch[key] || watch[key].trim() === '') return;
+                    
+                    gridHtml += `
+                        <div>
+                            <span class="text-slate-400 dark:text-slate-500 block mb-0.5">${key}</span>
+                            <span class="font-medium text-slate-700 dark:text-slate-300">${watch[key]}</span>
+                        </div>
+                    `;
+                });
 
                 return `
                 <div class="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm hover:shadow-xl dark:shadow-none dark:hover:bg-slate-850 transition-all duration-300 border border-slate-200 dark:border-slate-800 flex flex-col group">
@@ -408,14 +335,7 @@
                         ${notesHtml}
                         
                         <div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                                <span class="text-slate-400 dark:text-slate-500 block mb-0.5">Size</span>
-                                <span class="font-medium text-slate-700 dark:text-slate-300">${watch.CaseSize}</span>
-                            </div>
-                            <div>
-                                <span class="text-slate-400 dark:text-slate-500 block mb-0.5">Date Acquired</span>
-                                <span class="font-medium text-slate-700 dark:text-slate-300">${watch.PurchaseDate}</span>
-                            </div>
+                            ${gridHtml}
                         </div>
                     </div>
                 </div>`;
@@ -426,7 +346,6 @@
             loadingIndicator.classList.add('hidden');
             document.getElementById('error-message').classList.remove('hidden');
             if(msg) errorDetails.textContent = msg;
-            
             statusBadge.textContent = "Error";
             statusBadge.classList.remove('bg-blue-50', 'text-blue-600', 'dark:bg-slate-800', 'dark:text-blue-400');
             statusBadge.classList.add('bg-red-50', 'text-red-600', 'dark:bg-red-900/30', 'dark:text-red-400');

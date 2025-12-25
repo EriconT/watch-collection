@@ -225,7 +225,22 @@
                 complete: function(results) {
                     syncIcon.classList.remove('animate-spin');
                     if (results.data && results.data.length > 0) {
-                        allWatches = results.data.sort((a, b) => new Date(b.PurchaseDate) - new Date(a.PurchaseDate));
+                        
+                        // --- SAFE SORT LOGIC ---
+                        allWatches = results.data.sort((a, b) => {
+                            // Convert to dates or default to Epoch if invalid
+                            const dateA = new Date(a.PurchaseDate || '');
+                            const dateB = new Date(b.PurchaseDate || '');
+                            
+                            // Check if valid
+                            const valA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+                            const valB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+
+                            // Sort Descending (Newest First)
+                            return valB - valA;
+                        });
+                        // -----------------------
+
                         initializeSuccess();
                     } else {
                         fetchData(proxyIndex + 1);
@@ -263,7 +278,12 @@
             });
             document.getElementById('stat-brand').textContent = Object.keys(brands).length ? Object.keys(brands).reduce((a, b) => brands[a] > brands[b] ? a : b) : '-';
             document.getElementById('stat-movement').textContent = Object.keys(movements).length ? Object.keys(movements).reduce((a, b) => movements[a] > movements[b] ? a : b) : '-';
-            if(watches[0] && watches[0].PurchaseDate) document.getElementById('stat-latest').textContent = watches[0].PurchaseDate.split('-')[0];
+            
+            // Safe check for stats latest year
+            if(watches[0] && watches[0].PurchaseDate) {
+                 const d = new Date(watches[0].PurchaseDate);
+                 document.getElementById('stat-latest').textContent = isNaN(d.getFullYear()) ? '-' : d.getFullYear();
+            }
             
             // Bar Logic
             const barContainer = document.getElementById('brand-bar');
@@ -292,32 +312,16 @@
             gallery.innerHTML = watches.map(watch => {
                 const imageSrc = processImage(watch.ImageURL) || 'https://placehold.co/600x400/1e293b/475569?text=No+Image';
                 
-                // 1. Build Notes (Condition check)
                 const hasNotes = watch.Notes && watch.Notes.trim() !== '';
                 const notesHtml = hasNotes ? `<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800"><p class="text-sm text-slate-500 dark:text-slate-400 italic">"${watch.Notes}"</p></div>` : '';
 
-                // 2. Build Dynamic Grid
                 let gridHtml = '';
-                
-                // 2a. Always show Date First
-                gridHtml += `
-                    <div>
-                        <span class="text-slate-400 dark:text-slate-500 block mb-0.5">Date Acquired</span>
-                        <span class="font-medium text-slate-700 dark:text-slate-300">${watch.PurchaseDate}</span>
-                    </div>
-                `;
+                // Date logic
+                gridHtml += `<div><span class="text-slate-400 dark:text-slate-500 block mb-0.5">Date Acquired</span><span class="font-medium text-slate-700 dark:text-slate-300">${watch.PurchaseDate}</span></div>`;
 
-                // 2b. Loop through ALL other keys
                 Object.keys(watch).forEach(key => {
-                    // Skip the Special keys (handled elsewhere) and empty values
                     if (SPECIAL_KEYS.includes(key) || !watch[key] || watch[key].trim() === '') return;
-                    
-                    gridHtml += `
-                        <div>
-                            <span class="text-slate-400 dark:text-slate-500 block mb-0.5">${key}</span>
-                            <span class="font-medium text-slate-700 dark:text-slate-300">${watch[key]}</span>
-                        </div>
-                    `;
+                    gridHtml += `<div><span class="text-slate-400 dark:text-slate-500 block mb-0.5">${key}</span><span class="font-medium text-slate-700 dark:text-slate-300">${watch[key]}</span></div>`;
                 });
 
                 return `
@@ -331,9 +335,7 @@
                             <h2 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">${watch.Model}</h2>
                             <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 font-mono">${watch.Reference}</p>
                         </div>
-                        
                         ${notesHtml}
-                        
                         <div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
                             ${gridHtml}
                         </div>

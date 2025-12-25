@@ -241,7 +241,6 @@
                     case 'brand-desc':
                         return (b.Brand || '').localeCompare(a.Brand || '');
                     case 'size-asc':
-                        // Use the Smart Size Helper
                         return getWatchSize(a) - getWatchSize(b);
                     case 'size-desc':
                         return getWatchSize(b) - getWatchSize(a);
@@ -309,8 +308,11 @@
             statusBadge.classList.remove('animate-pulse', 'bg-blue-50', 'text-blue-600', 'dark:bg-slate-800', 'dark:text-blue-400');
             statusBadge.classList.add('bg-green-50', 'text-green-600', 'dark:bg-green-900/30', 'dark:text-green-400');
             
+            // FORCE UI TO MATCH JS STATE
+            sortSelect.value = currentSort;
+            
             renderStats(allWatches);
-            filterAndRender(); // Initial render with default sort
+            filterAndRender(); 
         }
 
         function filterAndRender() {

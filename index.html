@@ -197,8 +197,15 @@
             return cleanUrl;
         }
 
+        // Smart finder for Date
         function getWatchDate(watch) {
             return watch.PurchaseDate || watch.Date || watch['Date Acquired'] || watch['Purchase Date'] || watch['Acquired'] || '';
+        }
+
+        // Smart finder for Size (Handle Space "Case Size" vs "CaseSize")
+        function getWatchSize(watch) {
+            const val = watch['Case Size'] || watch['CaseSize'] || watch['Size'] || watch['Diameter'] || '0';
+            return parseFloat(val) || 0; // Strip "mm" and return number
         }
 
         function getTimestamp(dateStr) {
@@ -225,18 +232,19 @@
         function sortCollection(watches, criteria) {
             return [...watches].sort((a, b) => {
                 switch (criteria) {
-                    case 'date-desc': // Newest First
+                    case 'date-desc':
                         return getTimestamp(getWatchDate(b)) - getTimestamp(getWatchDate(a));
-                    case 'date-asc': // Oldest First
+                    case 'date-asc':
                         return getTimestamp(getWatchDate(a)) - getTimestamp(getWatchDate(b));
                     case 'brand-asc':
                         return (a.Brand || '').localeCompare(b.Brand || '');
                     case 'brand-desc':
                         return (b.Brand || '').localeCompare(a.Brand || '');
                     case 'size-asc':
-                        return parseFloat(a.CaseSize || 0) - parseFloat(b.CaseSize || 0);
+                        // Use the Smart Size Helper
+                        return getWatchSize(a) - getWatchSize(b);
                     case 'size-desc':
-                        return parseFloat(b.CaseSize || 0) - parseFloat(a.CaseSize || 0);
+                        return getWatchSize(b) - getWatchSize(a);
                     default:
                         return 0;
                 }
@@ -307,23 +315,15 @@
 
         function filterAndRender() {
             const term = searchInput.value.toLowerCase();
-            
-            // 1. Filter
             let filtered = allWatches.filter(watch => 
                 Object.values(watch).some(val => String(val).toLowerCase().includes(term))
             );
-
-            // 2. Sort
             filtered = sortCollection(filtered, currentSort);
-
-            // 3. Render
             renderCollection(filtered);
         }
 
         function renderStats(watches) {
-            // Sort by Date Desc for Stats regardless of UI sort
             const chronWatches = sortCollection(watches, 'date-desc');
-
             document.getElementById('stat-total').textContent = watches.length;
             const brands = {}; const movements = {};
             watches.forEach(w => {

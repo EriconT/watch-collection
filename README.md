@@ -4,10 +4,12 @@ A modern, serverless Progressive Web App (PWA) designed to track and visualize a
 ✨ Key Features
 
     Dynamic Data Engine: The app automatically detects new columns in your spreadsheet. Add a column like "Lug-to-Lug" or "Service History" in Google Sheets, and it instantly appears on the watch cards.
+    
+    Full CRUD Operations: Not just read-only! Add new watches, edit existing entries, and delete watches directly from the web app using a custom Google Apps Script backend.
 
     Smart Sorting: Sort the collection by Date (Newest/Oldest), Brand (A-Z), or Case Size (Small/Large).
 
-    Resilient Connectivity: Uses a multi-proxy fallback system. If one connection fails (e.g., restricted networks in South Korea), it automatically switches to a backup to ensure the app always loads.
+    Direct Connection: Communicates directly with your Google Sheet via Google Apps Script and native `fetch`, eliminating the need for third-party proxies and ensuring reliable, instantaneous updates.
 
     Smart Date Parsing: Intelligently handles American (MM/DD/YYYY), European (DD/MM/YYYY), and ISO (YYYY-MM-DD) date formats correctly.
 
@@ -35,29 +37,41 @@ The app relies on a Google Sheet with specific headers. Required Columns:
 Optional / Dynamic Columns: You can add any other column you want (e.g., Case Size, Lug Width, Movement, Notes). The app will automatically generate a label and value for them in the grid.
 
 ⚠️ Image Rules: If using Google Drive, ensure the image file permission is set to "General Access: Anyone with the link".
-2. Linking the Sheet
+2. The Apps Script Backend (`Code.gs`)
 
-The connection links are hardcoded in index.html for stability. To change the source sheet:
+This app requires a Google Apps Script to securely read and write to your spreadsheet.
+1. Open your Google Sheet.
+2. Go to **Extensions > Apps Script**.
+3. Copy the contents of the `Code.gs` file from this repository and paste it into the editor.
+4. Replace `SHEET_ID` in the code with your actual Google Sheet ID.
+5. Click **Deploy > New deployment**.
+6. Select type **Web app**.
+7. Set "Execute as" to **Me** and "Who has access" to **Anyone**.
+8. Deploy and authorize the script. Copy the resulting **Web App URL**.
 
-    Open index.html.
+3. Linking the Backend
 
-    Scroll to the bottom <script> section.
+The connection links are hardcoded in `index.html` for stability. To connect your backend:
+
+    Open `index.html`.
+
+    Scroll to the bottom `<script>` section.
 
     Update these two variables:
-    JavaScript
-
-    const SHEET_URL = "YOUR_PUBLISHED_CSV_LINK";
+    ```javascript
+    const APPS_SCRIPT_URL = "YOUR_NEWLY_DEPLOYED_WEB_APP_URL";
     const EDIT_URL = "YOUR_GOOGLE_SHEET_EDIT_LINK";
+    ```
 
-3. Deploying
+4. Deploying
 
-    Upload index.html to your GitHub repository.
+    Upload `index.html` to your GitHub repository.
 
     Go to Settings > Pages.
 
     Select the main branch and click Save.
 
-    Your app will be live at https://username.github.io/repo-name.
+    Your app will be live at `https://username.github.io/repo-name`.
 
 📱 How to Use on iPhone
 
@@ -73,7 +87,7 @@ The connection links are hardcoded in index.html for stability. To change the so
 
 🛠 Troubleshooting
 
-"Connection Failed" Error The app uses a proxy to fetch data from Google. If you see this error, the app automatically retries using backup proxies (corsproxy.io -> allorigins.win -> thingproxy). Wait 5 seconds and the data usually appears.
+"Connection Failed" Error Ensure your `APPS_SCRIPT_URL` is set correctly in `index.html` and that your Google Apps Script deployment is set to be accessible by "Anyone". If you recently changed `Code.gs`, you must create a **New deployment** for the changes to take effect.
 
 Images Not Loading
 
@@ -88,7 +102,7 @@ Sorting Looks Wrong The app attempts to parse "Case Size" intelligently (strippi
 
     Styling: Tailwind CSS (CDN)
 
-    Data Parsing: PapaParse
+    Backend: Google Apps Script
 
     Hosting: GitHub Pages
 

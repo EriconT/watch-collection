@@ -49,7 +49,8 @@ function doPost(e) {
     }
     
     function getOrUpdateHeaders(sheet, watchData) {
-      let headers = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0];
+      let lastCol = sheet.getLastColumn();
+      let headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
       if (headers.length === 1 && headers[0] === "") {
         headers = [];
       }
@@ -100,8 +101,9 @@ function doPost(e) {
       
       if (rowIndex > 1) {
         const headers = getOrUpdateHeaders(sheet, watchData);
-        const updatedRow = headers.map(header => {
-          return watchData[header] !== undefined ? watchData[header] : "";
+        const existingValues = sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0];
+        const updatedRow = headers.map((header, index) => {
+          return watchData[header] !== undefined ? watchData[header] : (existingValues[index] !== undefined ? existingValues[index] : "");
         });
         
         sheet.getRange(rowIndex, 1, 1, headers.length).setValues([updatedRow]);

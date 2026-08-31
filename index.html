@@ -316,41 +316,19 @@
 
         const htmlElement = document.documentElement;
 
-        // --- LOCAL STORAGE OVERRIDES (For instant responsiveness & fallback) ---
-        function getLocalOverrides() {
-            try {
-                return JSON.parse(localStorage.getItem('watch_overrides') || '{}');
-            } catch(e) {
-                return {};
-            }
-        }
-
-        function saveLocalOverride(rowId, updates) {
-            try {
-                const overrides = getLocalOverrides();
-                overrides[rowId] = { ...(overrides[rowId] || {}), ...updates };
-                localStorage.setItem('watch_overrides', JSON.stringify(overrides));
-            } catch(e) {
-                console.error(e);
-            }
-        }
-
-        function applyLocalOverrides(watches) {
-            const overrides = getLocalOverrides();
-            watches.forEach(watch => {
-                if (overrides[watch.row]) {
-                    Object.assign(watch, overrides[watch.row]);
-                }
-            });
-        }
-
-        function showToast(msg) {
+        function showToast(msg, isError = false) {
             if (!toastBanner || !toastMessage) return;
             toastMessage.textContent = msg;
+            if (isError) {
+                toastBanner.className = "mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 flex items-center justify-between text-sm fade-in";
+            } else {
+                toastBanner.className = "mb-6 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 flex items-center justify-between text-sm fade-in";
+            }
             toastBanner.classList.remove('hidden');
-            setTimeout(() => {
+            clearTimeout(window._toastTimeout);
+            window._toastTimeout = setTimeout(() => {
                 toastBanner.classList.add('hidden');
-            }, 6000);
+            }, 5000);
         }
 
         // --- THEME LOGIC ---
@@ -494,6 +472,9 @@
 
         // --- FETCH LOGIC ---
         window.addEventListener('DOMContentLoaded', () => {
+            // Clean up any legacy local overrides so database remains the single source of truth
+            try { localStorage.removeItem('watch_overrides'); } catch(e) {}
+
             if (EDIT_URL && !EDIT_URL.includes("PASTE")) editBtn.href = EDIT_URL;
             else editBtn.classList.add('hidden');
             fetchData();
@@ -585,33 +566,31 @@
             const price = quickSoldPrice.value.trim();
             const watchName = `${watch.Brand || ''} ${watch.Model || ''}`.trim();
 
-            // Optimistic update locally
-            watch.Status = 'Sold';
-            if (price) {
-                watch['Sold Price'] = price;
-            }
-            saveLocalOverride(quickSoldRowId, { Status: 'Sold', 'Sold Price': price });
+            confirmQuickSoldBtn.disabled = true;
+            quickSoldSpinner.classList.remove('hidden');
 
-            closeQuickSoldModal();
-            
-            // Switch to Sold view so the user immediately sees the piece in the sold archive
-            switchTab('sold');
-            showToast(`✓ "${watchName}" marked as Sold and moved to Sold Archive.`);
-
-            // Send to Apps Script in background
             try {
                 const payload = {
                     action: 'edit',
                     row: quickSoldRowId,
                     watch: { ...watch, Status: 'Sold', 'Sold Price': price }
                 };
-                await fetch(APPS_SCRIPT_URL, {
+                const res = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
+                
+                closeQuickSoldModal();
+                showToast(`✓ "${watchName}" marked as Sold and saved to database.`);
+                await fetchData();
+                switchTab('sold');
             } catch (err) {
-                console.warn("Background sync warning:", err);
+                console.error("Failed to mark as sold:", err);
+                showToast("Failed to update status on server. Please check your connection.", true);
+            } finally {
+                confirmQuickSoldBtn.disabled = false;
+                quickSoldSpinner.classList.add('hidden');
             }
         });
 
@@ -621,14 +600,10 @@
             const watchName = `${watch.Brand || ''} ${watch.Model || ''}`.trim();
             if (!confirm(`Move "${watchName}" back to your active collection?`)) return;
 
-            // Optimistic update locally
-            watch.Status = 'In Collection';
-            saveLocalOverride(rowId, { Status: 'In Collection' });
-            
-            switchTab('active');
-            showToast(`✓ "${watchName}" restored to Active Collection.`);
+            statusBadge.textContent = "Syncing...";
+            statusBadge.classList.remove('bg-green-50', 'text-green-600', 'dark:bg-green-900/30', 'dark:text-green-400');
+            statusBadge.classList.add('bg-blue-50', 'text-blue-600', 'dark:bg-slate-800', 'dark:text-blue-400', 'animate-pulse');
 
-            // Send to Apps Script in background
             try {
                 const payload = {
                     action: 'edit',
@@ -640,8 +615,12 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
+                showToast(`✓ "${watchName}" restored to Active Collection.`);
+                await fetchData();
+                switchTab('active');
             } catch (err) {
-                console.warn("Background sync warning:", err);
+                console.error("Failed to restore to collection:", err);
+                showToast("Failed to restore watch on server.", true);
             }
         };
 
@@ -683,14 +662,9 @@
         };
 
         window.deleteWatch = async (rowId) => {
-            if(!confirm("Are you sure you want to delete this watch? This action cannot be undone.")) return;
-            
-            // Optimistic delete locally
-            const deletedIndex = allWatches.findIndex(w => w.row === rowId);
-            if (deletedIndex !== -1) {
-                allWatches.splice(deletedIndex, 1);
-                filterAndRender();
-            }
+            const watch = allWatches.find(w => w.row === rowId);
+            const watchName = watch ? `${watch.Brand || ''} ${watch.Model || ''}`.trim() : 'this watch';
+            if(!confirm(`Are you sure you want to delete "${watchName}"? This action cannot be undone.`)) return;
             
             if(!APPS_SCRIPT_URL) {
                 showError("Cannot delete: APPS_SCRIPT_URL is not configured.");
@@ -707,8 +681,8 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
-                statusBadge.textContent = "Live";
-                statusBadge.classList.remove('animate-pulse');
+                showToast(`✓ "${watchName}" deleted.`);
+                await fetchData();
             } catch(err) {
                 showError("Failed to delete watch.");
             }
@@ -725,39 +699,6 @@
             const formData = new FormData(addForm);
             const watchData = Object.fromEntries(formData.entries());
             
-            // Optimistic update locally
-            if (isEditing && editRowId) {
-                const watch = allWatches.find(w => w.row === editRowId);
-                if (watch) {
-                    Object.assign(watch, watchData);
-                    saveLocalOverride(editRowId, watchData);
-                }
-            } else {
-                const nextRow = allWatches.length > 0 ? Math.max(...allWatches.map(w => w.row || 0)) + 1 : 2;
-                const newWatch = { ...watchData, row: nextRow };
-                allWatches.push(newWatch);
-                saveLocalOverride(nextRow, newWatch);
-            }
-            
-            // If the user selected "Sold" status, switch to sold view, else stay in active
-            if (watchData.Status === 'Sold') {
-                currentTab = 'sold';
-                tabSold.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm transition-all duration-200';
-                tabActive.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all duration-200';
-            }
-            
-            filterAndRender();
-            
-            addForm.reset();
-            addModal.classList.add('hidden');
-            document.body.style.overflow = '';
-            submitBtn.disabled = false;
-            submitText.textContent = isEditing ? "Save Changes" : "Add Watch";
-            submitSpinner.classList.add('hidden');
-
-            showToast(isEditing ? `✓ Watch updated successfully.` : `✓ Watch added successfully.`);
-
-            // Background sync to Google Apps Script
             try {
                 const payload = {
                     action: isEditing ? 'edit' : 'add',
@@ -770,8 +711,28 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
+                
+                addForm.reset();
+                addModal.classList.add('hidden');
+                document.body.style.overflow = '';
+                
+                showToast(isEditing ? `✓ Watch updated successfully.` : `✓ Watch added successfully.`);
+                
+                await fetchData();
+                
+                if (watchData.Status === 'Sold') {
+                    switchTab('sold');
+                } else {
+                    switchTab('active');
+                }
             } catch (err) {
-                console.warn("Background submission warning", err);
+                console.error("Submission error", err);
+                formError.textContent = "Failed to save to Google Sheet. Check connection and try again.";
+                formError.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitText.textContent = isEditing ? "Save Changes" : "Add Watch";
+                submitSpinner.classList.add('hidden');
             }
         });
 
@@ -783,19 +744,23 @@
             }
             
             try {
-                const response = await fetch(APPS_SCRIPT_URL);
+                // Prevent aggressive browser/mobile HTTP caching using timestamp and cache header
+                const cacheBuster = (APPS_SCRIPT_URL.includes('?') ? '&' : '?') + '_t=' + Date.now();
+                const response = await fetch(APPS_SCRIPT_URL + cacheBuster, {
+                    cache: 'no-store'
+                });
                 if (!response.ok) throw new Error("Network response was not ok");
                 const data = await response.json();
                 
                 if (Array.isArray(data)) {
                     allWatches = data;
-                    applyLocalOverrides(allWatches);
                     initializeSuccess();
                 } else {
-                    throw new Error("Invalid format received");
+                    throw new Error("Invalid format received from database");
                 }
             } catch(err) {
                 showError(err.message);
+            } finally {
                 syncIcon.classList.remove('animate-spin');
             }
         }

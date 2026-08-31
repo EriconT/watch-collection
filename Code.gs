@@ -48,9 +48,28 @@ function doPost(e) {
       data = e.parameter;
     }
     
+    function getOrUpdateHeaders(sheet, watchData) {
+      let headers = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0];
+      if (headers.length === 1 && headers[0] === "") {
+        headers = [];
+      }
+      const newHeaders = [];
+      for (const key in watchData) {
+        if (key && key !== 'row' && key !== 'action' && !headers.includes(key)) {
+          newHeaders.push(key);
+        }
+      }
+      if (newHeaders.length > 0) {
+        const startCol = headers.length + 1;
+        sheet.getRange(1, startCol, 1, newHeaders.length).setValues([newHeaders]);
+        headers = headers.concat(newHeaders);
+      }
+      return headers;
+    }
+
     if (data.action === 'add') {
-      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
       const watchData = data.watch || data;
+      const headers = getOrUpdateHeaders(sheet, watchData);
       
       const newRow = headers.map(header => {
         return watchData[header] !== undefined ? watchData[header] : "";
@@ -80,7 +99,7 @@ function doPost(e) {
       const watchData = data.watch || data;
       
       if (rowIndex > 1) {
-        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const headers = getOrUpdateHeaders(sheet, watchData);
         const updatedRow = headers.map(header => {
           return watchData[header] !== undefined ? watchData[header] : "";
         });

@@ -7,7 +7,9 @@ A modern, serverless Progressive Web App (PWA) designed to track and visualize a
     
     Full CRUD Operations: Not just read-only! Add new watches, edit existing entries, and delete watches directly from the web app using a custom Google Apps Script backend.
 
-    Smart Sorting: Sort the collection by Date (Newest/Oldest), Brand (A-Z), or Case Size (Small/Large).
+    Sold Watches & Archive: Mark watches as "Sold" and record the realization price. Sold watches automatically move out of the active collection into a dedicated Sold Archive view with specialized sold analytics.
+
+    Smart Sorting: Sort the collection by Date (Newest/Oldest), Brand (A-Z), Case Size (Small/Large), or Sold Price (High/Low).
 
     Direct Connection: Communicates directly with your Google Sheet via Google Apps Script and native `fetch`, eliminating the need for third-party proxies and ensuring reliable, instantaneous updates.
 
@@ -15,7 +17,7 @@ A modern, serverless Progressive Web App (PWA) designed to track and visualize a
 
     Google Drive Integration: Automatically converts standard Drive sharing links into high-speed thumbnails.
 
-    Collection Analytics: Real-time stats on total pieces, favorite brands, most common movements, and latest acquisitions.
+    Collection Analytics: Real-time stats on total pieces, favorite brands, most common movements, latest acquisitions, and total realized sold value.
 
     iOS Native Experience: Optimized for "Add to Home Screen" on iPhone with a custom icon and full-screen display.
 
@@ -34,7 +36,7 @@ The app relies on a Google Sheet with specific headers. Required Columns:
 
     PurchaseDate (or Date Acquired)
 
-Optional / Dynamic Columns: You can add any other column you want (e.g., Case Size, Lug Width, Movement, Notes). The app will automatically generate a label and value for them in the grid.
+Optional / Dynamic Columns: You can add any other column you want (e.g., Status, Sold Price, Case Size, Lug Width, Movement, Notes). The app will automatically generate a label and value for them, with special handling for Status ("In Collection" / "Sold") and Sold Price.
 
 ⚠️ Image Rules: If using Google Drive, ensure the image file permission is set to "General Access: Anyone with the link".
 2. The Apps Script Backend (`Code.gs`)

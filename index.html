@@ -2,7 +2,7 @@
 <html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -31,60 +31,71 @@
     </script>
 
     <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+        }
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         select { -webkit-appearance: none; appearance: none; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen pb-20 transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen pb-20 transition-colors duration-300 w-full overflow-x-hidden">
 
     <!-- Top Navigation Bar -->
-    <nav class="bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 backdrop-blur-md transition-colors duration-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
+    <nav class="bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 backdrop-blur-md transition-colors duration-300 w-full overflow-hidden">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-1.5 sm:gap-4 w-full">
             
             <!-- App Branding -->
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white hidden sm:block">Enrico's Collection</span>
-                <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white sm:hidden">Watches</span>
+                <span class="font-bold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white hidden md:block">Enrico's Collection</span>
+                <span class="font-bold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white md:hidden">Watches</span>
             </div>
 
             <!-- View Switcher Tabs -->
-            <div class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200 dark:border-slate-700/60 text-xs sm:text-sm font-semibold">
-                <button id="tab-active" onclick="switchTab('active')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm transition-all duration-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-0.5 sm:p-1 rounded-xl border border-slate-200 dark:border-slate-700/60 text-xs sm:text-sm font-semibold flex-shrink-0">
+                <button id="tab-active" onclick="switchTab('active')" class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm transition-all duration-200">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     <span>Collection</span>
                     <span id="active-count-badge" class="px-1.5 py-0.5 rounded-full text-[10px] bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold">0</span>
                 </button>
-                <button id="tab-sold" onclick="switchTab('sold')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all duration-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                <button id="tab-sold" onclick="switchTab('sold')" class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all duration-200">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
                     <span>Sold</span>
                     <span id="sold-count-badge" class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold">0</span>
                 </button>
             </div>
             
             <!-- Action Icons -->
-            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <div class="flex items-center gap-0.5 sm:gap-2 flex-shrink-0">
                 <div id="status-badge" class="hidden md:block px-3 py-1 bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium animate-pulse mr-1">
                     Syncing...
                 </div>
                 
-                <button id="add-btn" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Add Watch">
+                <button id="add-btn" class="p-1.5 sm:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Add Watch">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 </button>
 
-                <button id="sync-btn" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Force Sync">
+                <button id="sync-btn" class="p-1.5 sm:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Force Sync">
                     <svg id="sync-icon" class="w-5 h-5 fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
 
-                <a id="edit-btn" href="#" target="_blank" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Open Google Sheet">
+                <a id="edit-btn" href="#" target="_blank" class="p-1.5 sm:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Open Google Sheet">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 </a>
 
-                <button id="theme-toggle" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Toggle Theme">
+                <button id="theme-toggle" class="p-1.5 sm:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="Toggle Theme">
                     <svg id="sun-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     <svg id="moon-icon" class="w-5 h-5 block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                 </button>
@@ -92,85 +103,85 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 w-full overflow-x-hidden">
 
         <!-- Notification Toast Banner -->
-        <div id="toast-banner" class="hidden mb-6 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 flex items-center justify-between text-sm fade-in">
-            <div class="flex items-center gap-2">
+        <div id="toast-banner" class="hidden mb-6 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 flex items-center justify-between text-sm fade-in w-full">
+            <div class="flex items-center gap-2 min-w-0">
                 <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span id="toast-message">Watch updated successfully.</span>
+                <span id="toast-message" class="truncate">Watch updated successfully.</span>
             </div>
-            <button onclick="document.getElementById('toast-banner').classList.add('hidden')" class="text-blue-500 hover:text-blue-700 dark:text-blue-400">
+            <button onclick="document.getElementById('toast-banner').classList.add('hidden')" class="text-blue-500 hover:text-blue-700 dark:text-blue-400 flex-shrink-0 ml-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
         <!-- Analytics Dashboard -->
-        <div id="dashboard" class="hidden mb-12 fade-in">
-            <div class="flex items-center justify-between mb-4">
-                <h2 id="dashboard-title" class="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Collection Analytics</h2>
+        <div id="dashboard" class="hidden mb-10 sm:mb-12 fade-in w-full">
+            <div class="flex items-center justify-between mb-3 sm:mb-4">
+                <h2 id="dashboard-title" class="text-xs sm:text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Collection Analytics</h2>
                 <span id="dashboard-subtitle" class="text-xs text-slate-400 dark:text-slate-500 font-medium"></span>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1" id="stat-label-1">Total Pieces</p>
-                    <p class="text-3xl font-bold text-slate-900 dark:text-white" id="stat-val-1">0</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 mb-5 sm:mb-6">
+                <div class="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors min-w-0 overflow-hidden">
+                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mb-1 truncate" id="stat-label-1">Total Pieces</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white truncate" id="stat-val-1">0</p>
                 </div>
-                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1" id="stat-label-2">Top Brand</p>
-                    <p class="text-xl font-bold text-blue-600 dark:text-blue-400 truncate" id="stat-val-2">-</p>
+                <div class="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors min-w-0 overflow-hidden">
+                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mb-1 truncate" id="stat-label-2">Top Brand</p>
+                    <p class="text-base sm:text-xl font-bold text-blue-600 dark:text-blue-400 truncate" id="stat-val-2">-</p>
                 </div>
-                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1" id="stat-label-3">Fav Movement</p>
-                    <p class="text-xl font-bold text-slate-700 dark:text-slate-200 truncate" id="stat-val-3">-</p>
+                <div class="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors min-w-0 overflow-hidden">
+                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mb-1 truncate" id="stat-label-3">Fav Movement</p>
+                    <p class="text-base sm:text-xl font-bold text-slate-700 dark:text-slate-200 truncate" id="stat-val-3">-</p>
                 </div>
-                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1" id="stat-label-4">Latest Acquisition</p>
-                    <p class="text-xl font-bold text-slate-700 dark:text-slate-200 truncate" id="stat-val-4">-</p>
+                <div class="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors min-w-0 overflow-hidden">
+                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mb-1 truncate" id="stat-label-4">Latest Acquisition</p>
+                    <p class="text-base sm:text-xl font-bold text-slate-700 dark:text-slate-200 truncate" id="stat-val-4">-</p>
                 </div>
             </div>
-            <div class="bg-white dark:bg-slate-900 p-1 rounded-full shadow-sm flex h-4 overflow-hidden" id="brand-bar"></div>
-            <div class="flex flex-wrap gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400" id="brand-legend"></div>
+            <div class="bg-white dark:bg-slate-900 p-1 rounded-full shadow-sm flex h-3.5 sm:h-4 overflow-hidden w-full" id="brand-bar"></div>
+            <div class="flex flex-wrap gap-2.5 sm:gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400 w-full" id="brand-legend"></div>
         </div>
 
         <!-- Search and Sort Controls -->
-        <div class="max-w-xl mx-auto mb-10 flex gap-3 h-12">
-            <div class="relative group shadow-lg rounded-full flex-1 h-full">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="max-w-xl mx-auto mb-8 sm:mb-10 flex gap-2 sm:gap-3 h-11 sm:h-12 w-full">
+            <div class="relative group shadow-lg rounded-full flex-1 min-w-0 h-full">
+                <div class="absolute inset-y-0 left-0 pl-3.5 sm:pl-4 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <input type="text" id="search-input" class="block w-full h-full pl-11 pr-4 border-none rounded-l-full rounded-r-full sm:rounded-r-none bg-white dark:bg-slate-800 dark:text-white dark:placeholder-slate-500 text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all outline-none" placeholder="Search..." disabled>
+                <input type="text" id="search-input" class="block w-full h-full pl-9 sm:pl-11 pr-3 sm:pr-4 border-none rounded-full bg-white dark:bg-slate-800 dark:text-white dark:placeholder-slate-500 text-slate-700 placeholder-slate-400 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all outline-none" placeholder="Search..." disabled>
             </div>
 
-            <div class="relative shadow-lg rounded-full w-1/3 min-w-[140px] h-full">
-                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            <div class="relative shadow-lg rounded-full w-[110px] sm:w-1/3 sm:min-w-[140px] flex-shrink-0 h-full">
+                <div class="absolute inset-y-0 right-0 pr-2.5 sm:pr-3 flex items-center pointer-events-none">
+                    <svg class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
-                <select id="sort-select" class="block w-full h-full pl-4 pr-8 border-none rounded-r-full rounded-l-full sm:rounded-l-none bg-white dark:bg-slate-800 dark:text-white text-slate-700 text-sm font-medium focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all outline-none cursor-pointer">
+                <select id="sort-select" class="block w-full h-full pl-3 sm:pl-4 pr-6 sm:pr-8 border-none rounded-full bg-white dark:bg-slate-800 dark:text-white text-slate-700 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all outline-none cursor-pointer truncate">
                     <option value="date-desc">Newest</option>
                     <option value="date-asc">Oldest</option>
                     <option value="brand-asc">Brand (A-Z)</option>
                     <option value="brand-desc">Brand (Z-A)</option>
                     <option value="size-asc">Size (Small)</option>
                     <option value="size-desc">Size (Large)</option>
-                    <option value="price-desc">Sold Price (High)</option>
-                    <option value="price-asc">Sold Price (Low)</option>
+                    <option value="price-desc">Sold (High)</option>
+                    <option value="price-asc">Sold (Low)</option>
                 </select>
             </div>
         </div>
 
-        <div id="loading-indicator" class="flex justify-center py-20">
+        <div id="loading-indicator" class="flex justify-center py-20 w-full">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 dark:border-slate-600"></div>
         </div>
-        <div id="error-message" class="hidden text-center py-10 px-4">
+        <div id="error-message" class="hidden text-center py-10 px-4 w-full">
             <p class="text-red-500 dark:text-red-400 font-bold mb-2">Connection Failed</p>
             <p class="text-sm text-slate-500 dark:text-slate-400" id="error-details">Could not connect to Google Sheets.</p>
         </div>
-        <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 hidden fade-in"></div>
-        <div id="no-results" class="hidden text-center py-16 text-slate-400 dark:text-slate-500">
+        <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 hidden fade-in w-full"></div>
+        <div id="no-results" class="hidden text-center py-16 text-slate-400 dark:text-slate-500 w-full">
             <svg class="w-12 h-12 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
             <p id="no-results-text" class="text-base font-medium">No matching watches found.</p>
         </div>
@@ -428,8 +439,8 @@
         window.switchTab = (tab) => {
             currentTab = tab;
             
-            const activeTabClass = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm transition-all duration-200';
-            const inactiveTabClass = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all duration-200';
+            const activeTabClass = 'flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm transition-all duration-200';
+            const inactiveTabClass = 'flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all duration-200';
 
             if (currentTab === 'active') {
                 tabActive.className = activeTabClass;
@@ -917,14 +928,14 @@
                 
                 let gridHtml = '';
                 if (displayDate) {
-                    gridHtml += `<div><span class="text-slate-400 dark:text-slate-500 block mb-0.5">Date Acquired</span><span class="font-medium text-slate-700 dark:text-slate-300">${displayDate}</span></div>`;
+                    gridHtml += `<div class="min-w-0 overflow-hidden"><span class="text-slate-400 dark:text-slate-500 block mb-0.5 truncate">Date Acquired</span><span class="font-medium text-slate-700 dark:text-slate-300 break-words">${displayDate}</span></div>`;
                 }
 
                 Object.keys(watch).forEach(key => {
                     if (IGNORE_KEYS.includes(key) || !watch[key] || String(watch[key]).trim() === '') return;
                     if (key === 'PurchaseDate' || key === 'Date' || key === 'Date Acquired' || key === 'Purchase Date') return;
                     
-                    gridHtml += `<div><span class="text-slate-400 dark:text-slate-500 block mb-0.5">${key}</span><span class="font-medium text-slate-700 dark:text-slate-300">${watch[key]}</span></div>`;
+                    gridHtml += `<div class="min-w-0 overflow-hidden"><span class="text-slate-400 dark:text-slate-500 block mb-0.5 truncate">${key}</span><span class="font-medium text-slate-700 dark:text-slate-300 break-words">${watch[key]}</span></div>`;
                 });
 
                 // Top left badge for sold status
@@ -938,12 +949,12 @@
 
                 // Price display banner if sold
                 const soldPriceDisplayHtml = (isSold && formattedPrice) ? `
-                    <div class="mt-3 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between">
+                    <div class="mt-3 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between min-w-0">
                         <span class="text-xs font-semibold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             Sold Price
                         </span>
-                        <span class="text-sm font-bold text-emerald-700 dark:text-emerald-300 font-mono">${formattedPrice}</span>
+                        <span class="text-sm font-bold text-emerald-700 dark:text-emerald-300 font-mono truncate ml-2">${formattedPrice}</span>
                     </div>` : '';
 
                 // Action buttons in overlay
@@ -970,23 +981,23 @@
                     </button>`;
 
                 return `
-                <div class="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm hover:shadow-xl dark:shadow-none dark:hover:bg-slate-850 transition-all duration-300 border border-slate-200 dark:border-slate-800 flex flex-col group relative ${isSold ? 'border-amber-500/30 dark:border-amber-500/20' : ''}">
+                <div class="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm hover:shadow-xl dark:shadow-none dark:hover:bg-slate-850 transition-all duration-300 border border-slate-200 dark:border-slate-800 flex flex-col group relative w-full max-w-full ${isSold ? 'border-amber-500/30 dark:border-amber-500/20' : ''}">
                     ${soldBadgeHtml}
                     <div class="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 dark:bg-slate-900/90 backdrop-blur rounded-lg p-1 shadow-md">
                         ${actionButtonsHtml}
                     </div>
-                    <div class="h-64 overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
+                    <div class="h-56 sm:h-64 overflow-hidden bg-slate-100 dark:bg-slate-800 relative w-full">
                         <img src="${imageSrc}" alt="${watch.Model}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isSold ? 'filter brightness-95 saturate-[0.85]' : ''}">
                     </div>
-                    <div class="p-5 flex-1 flex flex-col">
-                        <div class="mb-2">
-                            <h3 class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">${watch.Brand || 'Unknown'}</h3>
-                            <h2 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">${watch.Model || 'Unknown'}</h2>
-                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 font-mono">${watch.Reference || ''}</p>
+                    <div class="p-4 sm:p-5 flex-1 flex flex-col min-w-0">
+                        <div class="mb-2 min-w-0">
+                            <h3 class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1 truncate">${watch.Brand || 'Unknown'}</h3>
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight break-words">${watch.Model || 'Unknown'}</h2>
+                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 font-mono break-all">${watch.Reference || ''}</p>
                         </div>
                         ${soldPriceDisplayHtml}
                         ${notesHtml}
-                        <div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
+                        <div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs min-w-0">
                             ${gridHtml}
                         </div>
                     </div>
